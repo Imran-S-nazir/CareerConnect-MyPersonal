@@ -30,6 +30,7 @@ CareerConnect has two primary user types:
 
 A visitor is an unauthenticated user who can explore the platform but cannot perform student-specific actions.
 
+
 ### Visitors can:
 
 * View available jobs
