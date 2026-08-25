@@ -10,6 +10,6 @@ router.post("/logout",authControllers.logoutUser)
 router.get("/me",authMiddleware,authControllers.getMe)
 
 router.patch("/update-experience-level",authMiddleware,authControllers.updateExperienceLevel)
-
+router.post("/check-email", authControllers.checkEmail);
 
 module.exports = router

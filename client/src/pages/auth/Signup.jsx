@@ -9,410 +9,764 @@ import {
 } from "../../redux/features/authSlice";
 import api from "../../api/api";
 
-const UserIcon = () => (
-  <svg
-    className="w-5 h-5"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-    />
-  </svg>
-);
-
-const AtIcon = () => (
-  <svg
-    className="w-5 h-5"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-    />
-  </svg>
-);
-
-const MailIcon = () => (
-  <svg
-    className="w-5 h-5"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M3 7.5A2.5 2.5 0 015.5 5h13A2.5 2.5 0 0121 7.5v9a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 16.5v-9z"
-    />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 7l8 6 8-6" />
-  </svg>
-);
-
-const PhoneIcon = () => (
-  <svg
-    className="w-5 h-5"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M3 5.5A2.5 2.5 0 015.5 3h1.1c.8 0 1.5.5 1.7 1.3l.7 2.4c.2.6 0 1.3-.5 1.7l-1.1.9a12.1 12.1 0 006.4 6.4l.9-1.1c.4-.5 1.1-.7 1.7-.5l2.4.7c.8.2 1.3.9 1.3 1.7v1.1A2.5 2.5 0 0118.5 21H17C9.3 21 3 14.7 3 7V5.5z"
-    />
-  </svg>
-);
-
-const LockIcon = () => (
-  <svg
-    className="w-5 h-5"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <rect x="4" y="10" width="16" height="10" rx="2" />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M8 10V7a4 4 0 018 0v3"
-    />
-  </svg>
-);
-
-const EyeIcon = ({ hidden = false }) => (
-  <svg
-    className="w-5 h-5"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    {hidden ? (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18" />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M10.6 10.6a2 2 0 002.8 2.8"
-        />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M9.9 4.2A10.8 10.8 0 0112 4c5 0 8.8 3.3 10 8a10.8 10.8 0 01-3 5.1"
-        />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M6.6 6.6A11 11 0 002 12c1.2 4.7 5 8 10 8a10.7 10.7 0 004.2-.8"
-        />
-      </>
-    ) : (
-      <>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"
-        />
-        <circle cx="12" cy="12" r="2.5" />
-      </>
-    )}
-  </svg>
-);
-
 const Signup = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, error, success } = useSelector((state) => state.auth);
+  const { loading, error } = useSelector((state) => state.auth);
+
+  const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState("next");
+  const [userType, setUserType] = useState("");
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  // Field-level errors
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     fullName: "",
-    username: "",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
+    linkedin: "",
+    github: "",
+    college: "",
+    course: "",
+    year: "",
+    graduationYear: "",
+    highestQualification: "",
+    passoutYear: "",
+    skills: "",
+    currentCompany: "",
+    jobTitle: "",
+    experienceYears: "",
+    industry: "",
   });
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (error || success) dispatch(clearMessages());
+
+    // Clear that field error while typing
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+    if (error) dispatch(clearMessages());
+  };
+
+  // -------------------- VALIDATION HELPERS --------------------
+  const validateStep1 = async () => {
+    const errors = {};
+
+    if (!formData.fullName.trim()) {
+      errors.fullName = "Full name is required";
+    } else if (formData.fullName.trim().length < 2) {
+      errors.fullName = "Name must be at least 2 characters";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Please enter a valid email";
+    }
+
+    if (!formData.phone.trim()) {
+      errors.phone = "Mobile number is required";
+    } else if (!/^[6-9]\d{9}$/.test(formData.phone.replace(/\D/g, "").slice(-10))) {
+      errors.phone = "Please enter a valid 10-digit mobile number";
+    }
+
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      return false;
+    }
+
+    // Check if email already exists in database
+    try {
+      setCheckingEmail(true);
+      const res = await api.post("/auth/check-email", {
+        email: formData.email.trim().toLowerCase(),
+      });
+
+      if (res.data.exists) {
+        setFieldErrors({ email: "This email is already registered" });
+        return false;
+      }
+    } catch (err) {
+      // Agar check-email API nahi bani to ignore, register pe check ho jayega
+      console.log("Email check skipped");
+    } finally {
+      setCheckingEmail(false);
+    }
+
+    return true;
+  };
+
+  const validateStep3 = () => {
+    const errors = {};
+
+    if (userType === "student") {
+      if (!formData.college.trim()) errors.college = "College name is required";
+      if (!formData.course.trim()) errors.course = "Course is required";
+      if (!formData.year) errors.year = "Please select current year";
+      if (!formData.graduationYear) {
+        errors.graduationYear = "Graduation year is required";
+      }
+    }
+
+    if (userType === "fresher") {
+      if (!formData.highestQualification.trim()) {
+        errors.highestQualification = "Qualification is required";
+      }
+      if (!formData.passoutYear) {
+        errors.passoutYear = "Passout year is required";
+      }
+    }
+
+    if (userType === "professional") {
+      if (!formData.currentCompany.trim()) {
+        errors.currentCompany = "Company name is required";
+      }
+      if (!formData.jobTitle.trim()) {
+        errors.jobTitle = "Job title is required";
+      }
+      if (!formData.experienceYears) {
+        errors.experienceYears = "Please select experience";
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // -------------------- NAVIGATION --------------------
+  const goNext = () => {
+    setDirection("next");
+    setStep((s) => s + 1);
+    setFieldErrors({});
+  };
+
+  const goBack = () => {
+    setDirection("prev");
+    setStep((s) => s - 1);
+    setFieldErrors({});
+  };
+
+  const handleStep1Next = async () => {
+    const isValid = await validateStep1();
+    if (isValid) {
+      goNext();
+    }
+  };
+
+  const handleSelectType = (type) => {
+    setUserType(type);
+    goNext();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      dispatch(signupFailure("Passwords do not match"));
-      return;
-    }
+    if (!validateStep3()) return;
 
     dispatch(signupStart());
 
     try {
-      const response = await api.post("/auth/register", formData);
-      const { user } = response.data;
-      dispatch(signupSuccess({ user }));
-      navigate("/select-role");
+      const payload = {
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        linkedin: formData.linkedin.trim(),
+        github: formData.github.trim(),
+        userType,
+      };
+
+      if (userType === "student") {
+        Object.assign(payload, {
+          college: formData.college.trim(),
+          course: formData.course.trim(),
+          year: formData.year,
+          graduationYear: formData.graduationYear,
+        });
+      } else if (userType === "fresher") {
+        Object.assign(payload, {
+          highestQualification: formData.highestQualification.trim(),
+          passoutYear: formData.passoutYear,
+          skills: formData.skills.trim(),
+        });
+      } else {
+        Object.assign(payload, {
+          currentCompany: formData.currentCompany.trim(),
+          jobTitle: formData.jobTitle.trim(),
+          experienceYears: formData.experienceYears,
+          industry: formData.industry.trim(),
+        });
+      }
+
+      const res = await api.post("/auth/register", payload);
+      dispatch(signupSuccess({ user: res.data.user }));
+      navigate("/student/dashboard");
     } catch (err) {
-      dispatch(
-        signupFailure(
-          err.response?.data?.message ||
-            "Something went wrong. Please try again.",
-        ),
-      );
+      const message =
+        err.response?.data?.message || "Registration failed. Please try again.";
+      dispatch(signupFailure(message));
+
+      // Agar backend field error bheje
+      if (err.response?.data?.field) {
+        setFieldErrors({
+          [err.response.data.field]: err.response.data.message,
+        });
+      }
     }
   };
 
+  const slideClass =
+    direction === "next" ? "animate-slide-in-right" : "animate-slide-in-left";
+
+  // Helper for input class
+  const inputClass = (field) =>
+    `w-full h-11 rounded-xl border bg-white px-4 text-sm outline-none transition focus:ring-4 ${
+      fieldErrors[field]
+        ? "border-red-400 focus:border-red-500 focus:ring-red-500/10"
+        : "border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
+    }`;
+
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80">
-        <div className="grid lg:grid-cols-2 min-h-[680px]">
-          {/* Left Brand Panel */}
-          <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 text-white p-12 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* LEFT PANEL - Only Step 1 */}
+      {step === 1 && (
+        <div className="hidden lg:flex w-[42%] bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 text-white p-12 flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+          <div className="absolute bottom-0 left-0 w-56 h-56 bg-indigo-500/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
 
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-16">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-600/30">
-                  C
-                </div>
-                <div>
-                  <h1 className="text-xl font-semibold tracking-tight">
-                    CareerConnect
-                  </h1>
-                  <p className="text-xs text-slate-400">
-                    Career & Opportunity Platform
-                  </p>
-                </div>
+          <div className="relative z-10">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-600/30">
+                C
               </div>
-
-              <h2 className="text-3xl xl:text-4xl font-semibold leading-tight tracking-tight mb-5">
-                Build your career. <br />
-                <span className="text-blue-400">Start today.</span>
-              </h2>
-              <p className="text-slate-300 text-[15px] leading-relaxed max-w-sm">
-                Create your account and unlock opportunities designed to help
-                you grow, connect, and succeed.
-              </p>
-            </div>
-
-            <div className="relative z-10 space-y-4 text-sm text-slate-300">
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                Discover jobs & internships matching your skills
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight">CareerConnect</h1>
+                <p className="text-xs text-slate-400">Career & Opportunity Platform</p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                Connect with recruiters and companies
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                Build a strong professional profile
-              </div>
-            </div>
+            </Link>
           </div>
 
-          {/* Right Form Panel */}
-          <div className="flex items-center justify-center p-6 sm:p-8 lg:p-10">
-            <div className="w-full max-w-md">
-              {/* Mobile Logo */}
-              <div className="lg:hidden flex items-center justify-center gap-2.5 mb-8">
-                <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
-                  C
-                </div>
-                <span className="text-xl font-semibold text-slate-900">
-                  CareerConnect
-                </span>
-              </div>
+          <div className="relative z-10">
+            <h2 className="text-4xl font-semibold leading-tight tracking-tight mb-5">
+              Build your future.<br />
+              <span className="text-blue-400">One step at a time.</span>
+            </h2>
+            <p className="text-slate-300 text-[15px] leading-relaxed max-w-sm">
+              Create your account and unlock opportunities tailored for students, freshers and professionals.
+            </p>
+          </div>
 
-              <div className="mb-7">
-                <p className="text-sm font-medium text-blue-600 mb-1.5">
-                  Get started
-                </p>
-                <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+          <div className="relative z-10 text-sm text-slate-400">
+            Already have an account?{" "}
+            <Link to="/login" className="text-white font-medium hover:underline">
+              Sign in
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* RIGHT / FULL CONTENT */}
+      <div className={`flex-1 flex items-center justify-center p-6 sm:p-10 ${step === 1 ? "" : "w-full"}`}>
+        <div className={`w-full ${step === 1 ? "max-w-md" : "max-w-2xl"}`}>
+          
+          {/* Progress */}
+          <div className="flex items-center gap-2 mb-10 max-w-md mx-auto">
+            {[1, 2, 3].map((s) => (
+              <div key={s} className="flex items-center gap-2 flex-1 last:flex-none">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                    step >= s ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-500"
+                  }`}
+                >
+                  {s}
+                </div>
+                {s < 3 && (
+                  <div className={`h-0.5 flex-1 rounded transition-all ${step > s ? "bg-blue-600" : "bg-slate-200"}`} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {error && (
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 max-w-md mx-auto">
+              {error}
+            </div>
+          )}
+
+          {/* ================= STEP 1 ================= */}
+          {step === 1 && (
+            <div key="step1" className={slideClass}>
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
                   Create your account
                 </h2>
-                <p className="text-sm text-slate-500 mt-2">
-                  Join CareerConnect and start your professional journey
+                <p className="text-sm text-slate-500 mt-1.5">
+                  Let’s start with the basics
                 </p>
               </div>
 
-              {/* Messages */}
-              {error && (
-                <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                  {success}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Full Name + Username */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Full Name
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                        <UserIcon />
-                      </div>
-                      <input
-                        type="text"
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleChange}
-                        placeholder="John Doe"
-                        required
-                        className="w-full h-11 rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Username
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                        <AtIcon />
-                      </div>
-                      <input
-                        type="text"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleChange}
-                        placeholder="johndoe_99"
-                        required
-                        className="w-full h-11 rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                      />
-                    </div>
-                  </div>
+              <div className="space-y-4">
+                {/* Full Name */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Full Name
+                  </label>
+                  <input
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    placeholder="John Doe"
+                    className={inputClass("fullName")}
+                  />
+                  {fieldErrors.fullName && (
+                    <p className="text-xs text-red-500 mt-1.5">{fieldErrors.fullName}</p>
+                  )}
                 </div>
 
                 {/* Email */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Email Address
+                    Email
                   </label>
-                  <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                      <MailIcon />
-                    </div>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="john@example.com"
-                      required
-                      className="w-full h-11 rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="john@example.com"
+                    className={inputClass("email")}
+                  />
+                  {fieldErrors.email && (
+                    <p className="text-xs text-red-500 mt-1.5">{fieldErrors.email}</p>
+                  )}
                 </div>
 
                 {/* Phone */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Phone Number
+                    Mobile
                   </label>
-                  <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                      <PhoneIcon />
-                    </div>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="+91 98765 43210"
-                      required
-                      className="w-full h-11 rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+91 98765 43210"
+                    className={inputClass("phone")}
+                  />
+                  {fieldErrors.phone && (
+                    <p className="text-xs text-red-500 mt-1.5">{fieldErrors.phone}</p>
+                  )}
                 </div>
 
-                {/* Password */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                      <LockIcon />
-                    </div>
+                {/* Password + Confirm */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      Password
+                    </label>
                     <input
-                      type={showPassword ? "text" : "password"}
+                      type="password"
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      placeholder="Create a strong password"
-                      required
-                      className="w-full h-11 rounded-lg border border-slate-200 bg-white pl-11 pr-12 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      placeholder="••••••••"
+                      className={inputClass("password")}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
-                    >
-                      <EyeIcon hidden={showPassword} />
-                    </button>
+                    {fieldErrors.password && (
+                      <p className="text-xs text-red-500 mt-1.5">{fieldErrors.password}</p>
+                    )}
                   </div>
-                </div>
-
-                {/* Confirm Password */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                      <LockIcon />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      Confirm
+                    </label>
                     <input
-                      type={showConfirmPassword ? "text" : "password"}
+                      type="password"
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      placeholder="Confirm your password"
-                      required
-                      className="w-full h-11 rounded-lg border border-slate-200 bg-white pl-11 pr-12 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      placeholder="••••••••"
+                      className={inputClass("confirmPassword")}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
-                    >
-                      <EyeIcon hidden={showConfirmPassword} />
-                    </button>
+                    {fieldErrors.confirmPassword && (
+                      <p className="text-xs text-red-500 mt-1.5">{fieldErrors.confirmPassword}</p>
+                    )}
                   </div>
                 </div>
 
-                {/* Submit */}
+                <button
+                  onClick={handleStep1Next}
+                  disabled={checkingEmail}
+                  className="w-full h-11 mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-semibold transition shadow-sm flex items-center justify-center gap-2"
+                >
+                  {checkingEmail ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    "Continue"
+                  )}
+                </button>
+              </div>
+
+              <p className="lg:hidden text-center text-sm text-slate-500 mt-8">
+                Already have an account?{" "}
+                <Link to="/login" className="font-semibold text-blue-600">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          )}
+
+          {/* ================= STEP 2 ================= */}
+          {step === 2 && (
+            <div key="step2" className={slideClass}>
+              <button
+                onClick={goBack}
+                className="text-sm text-slate-500 hover:text-slate-700 mb-6 flex items-center gap-1"
+              >
+                ← Back
+              </button>
+
+              <div className="mb-8 text-center">
+                <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+                  What best describes you?
+                </h2>
+                <p className="text-sm text-slate-500 mt-2">
+                  Select the option that matches your current stage
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  {
+                    id: "student",
+                    title: "Student",
+                    desc: "Currently studying in college/university and looking for internships or early opportunities.",
+                    color: "blue",
+                  },
+                  {
+                    id: "fresher",
+                    title: "Fresher",
+                    desc: "Recently graduated and ready to start your professional career with entry-level roles.",
+                    color: "emerald",
+                  },
+                  {
+                    id: "professional",
+                    title: "Working Professional",
+                    desc: "Already working and looking for better opportunities, career growth or a job switch.",
+                    color: "violet",
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSelectType(item.id)}
+                    className="group p-6 rounded-2xl border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 transition text-left"
+                  >
+                    <div
+                      className={`w-12 h-12 mb-4 rounded-xl flex items-center justify-center transition
+                        ${item.color === "blue" ? "bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white" : ""}
+                        ${item.color === "emerald" ? "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white" : ""}
+                        ${item.color === "violet" ? "bg-violet-50 text-violet-600 group-hover:bg-violet-600 group-hover:text-white" : ""}
+                      `}
+                    >
+                      {item.id === "student" && (
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 14l9-5-9-5-9 5 9 5z" />
+                        </svg>
+                      )}
+                      {item.id === "fresher" && (
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      )}
+                      {item.id === "professional" && (
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900 group-hover:text-blue-600 mb-2">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-slate-500 leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ================= STEP 3 ================= */}
+          {step === 3 && (
+            <div key="step3" className={`${slideClass} max-w-md mx-auto`}>
+              <button
+                onClick={goBack}
+                className="text-sm text-slate-500 hover:text-slate-700 mb-6 flex items-center gap-1"
+              >
+                ← Back
+              </button>
+
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
+                  {userType === "student" && "Your education details"}
+                  {userType === "fresher" && "Your background"}
+                  {userType === "professional" && "Your work experience"}
+                </h2>
+                <p className="text-sm text-slate-500 mt-1.5">
+                  Almost done — just a few more details
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* STUDENT */}
+                {userType === "student" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        College / University
+                      </label>
+                      <input
+                        name="college"
+                        value={formData.college}
+                        onChange={handleChange}
+                        placeholder="College name"
+                        className={inputClass("college")}
+                      />
+                      {fieldErrors.college && (
+                        <p className="text-xs text-red-500 mt-1.5">{fieldErrors.college}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Course
+                      </label>
+                      <input
+                        name="course"
+                        value={formData.course}
+                        onChange={handleChange}
+                        placeholder="B.Tech Computer Science"
+                        className={inputClass("course")}
+                      />
+                      {fieldErrors.course && (
+                        <p className="text-xs text-red-500 mt-1.5">{fieldErrors.course}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                          Current Year
+                        </label>
+                        <select
+                          name="year"
+                          value={formData.year}
+                          onChange={handleChange}
+                          className={inputClass("year") + " bg-white"}
+                        >
+                          <option value="">Select</option>
+                          <option value="1">1st Year</option>
+                          <option value="2">2nd Year</option>
+                          <option value="3">3rd Year</option>
+                          <option value="4">4th Year</option>
+                        </select>
+                        {fieldErrors.year && (
+                          <p className="text-xs text-red-500 mt-1.5">{fieldErrors.year}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                          Graduation Year
+                        </label>
+                        <input
+                          type="number"
+                          name="graduationYear"
+                          value={formData.graduationYear}
+                          onChange={handleChange}
+                          placeholder="2027"
+                          className={inputClass("graduationYear")}
+                        />
+                        {fieldErrors.graduationYear && (
+                          <p className="text-xs text-red-500 mt-1.5">{fieldErrors.graduationYear}</p>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* FRESHER */}
+                {userType === "fresher" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Highest Qualification
+                      </label>
+                      <input
+                        name="highestQualification"
+                        value={formData.highestQualification}
+                        onChange={handleChange}
+                        placeholder="B.Tech / BCA / MCA"
+                        className={inputClass("highestQualification")}
+                      />
+                      {fieldErrors.highestQualification && (
+                        <p className="text-xs text-red-500 mt-1.5">{fieldErrors.highestQualification}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Passout Year
+                      </label>
+                      <input
+                        type="number"
+                        name="passoutYear"
+                        value={formData.passoutYear}
+                        onChange={handleChange}
+                        placeholder="2024"
+                        className={inputClass("passoutYear")}
+                      />
+                      {fieldErrors.passoutYear && (
+                        <p className="text-xs text-red-500 mt-1.5">{fieldErrors.passoutYear}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Key Skills
+                      </label>
+                      <input
+                        name="skills"
+                        value={formData.skills}
+                        onChange={handleChange}
+                        placeholder="React, Node.js, Python..."
+                        className={inputClass("skills")}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* PROFESSIONAL */}
+                {userType === "professional" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Current Company
+                      </label>
+                      <input
+                        name="currentCompany"
+                        value={formData.currentCompany}
+                        onChange={handleChange}
+                        placeholder="Company name"
+                        className={inputClass("currentCompany")}
+                      />
+                      {fieldErrors.currentCompany && (
+                        <p className="text-xs text-red-500 mt-1.5">{fieldErrors.currentCompany}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Job Title
+                      </label>
+                      <input
+                        name="jobTitle"
+                        value={formData.jobTitle}
+                        onChange={handleChange}
+                        placeholder="Software Engineer"
+                        className={inputClass("jobTitle")}
+                      />
+                      {fieldErrors.jobTitle && (
+                        <p className="text-xs text-red-500 mt-1.5">{fieldErrors.jobTitle}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                          Experience
+                        </label>
+                        <select
+                          name="experienceYears"
+                          value={formData.experienceYears}
+                          onChange={handleChange}
+                          className={inputClass("experienceYears") + " bg-white"}
+                        >
+                          <option value="">Select</option>
+                          <option value="0-1">0-1 years</option>
+                          <option value="1-3">1-3 years</option>
+                          <option value="3-5">3-5 years</option>
+                          <option value="5+">5+ years</option>
+                        </select>
+                        {fieldErrors.experienceYears && (
+                          <p className="text-xs text-red-500 mt-1.5">{fieldErrors.experienceYears}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                          Industry
+                        </label>
+                        <input
+                          name="industry"
+                          value={formData.industry}
+                          onChange={handleChange}
+                          placeholder="IT / Finance"
+                          className={inputClass("industry")}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* LinkedIn + GitHub */}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      LinkedIn
+                    </label>
+                    <input
+                      name="linkedin"
+                      value={formData.linkedin}
+                      onChange={handleChange}
+                      placeholder="linkedin.com/in/..."
+                      className={inputClass("linkedin")}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      GitHub
+                    </label>
+                    <input
+                      name="github"
+                      value={formData.github}
+                      onChange={handleChange}
+                      placeholder="github.com/username"
+                      className={inputClass("github")}
+                    />
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 mt-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-400 disabled:cursor-not-allowed text-white text-sm font-semibold transition flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                  className="w-full h-11 mt-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-semibold transition flex items-center justify-center gap-2 shadow-sm"
                 >
                   {loading ? (
                     <>
@@ -424,21 +778,8 @@ const Signup = () => {
                   )}
                 </button>
               </form>
-
-              {/* Footer */}
-              <div className="mt-7 pt-6 border-t border-slate-100 text-center">
-                <p className="text-sm text-slate-600">
-                  Already have an account?{" "}
-                  <Link
-                    to="/login"
-                    className="font-semibold text-blue-600 hover:text-blue-700 transition"
-                  >
-                    Sign in
-                  </Link>
-                </p>
-              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

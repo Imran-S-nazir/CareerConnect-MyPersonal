@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+// ==========================================
+// EDUCATION SUB-SCHEMA
+// ==========================================
 const educationSchema = new mongoose.Schema(
   {
     institution: {
@@ -41,9 +44,12 @@ const educationSchema = new mongoose.Schema(
       maxlength: [20, "Grade cannot exceed 20 characters"],
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
+// ==========================================
+// EXPERIENCE SUB-SCHEMA
+// ==========================================
 const experienceSchema = new mongoose.Schema(
   {
     company: {
@@ -79,15 +85,30 @@ const experienceSchema = new mongoose.Schema(
       maxlength: [1000, "Description cannot exceed 1000 characters"],
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
+// ==========================================
+// USER SCHEMA
+// ==========================================
 const userSchema = new mongoose.Schema(
   {
+    // ==========================================
+    // BASIC INFORMATION
+    // ==========================================
+
+    fullName: {
+      type: String,
+      required: [true, "Full name is required"],
+      trim: true,
+      minlength: [2, "Full name must contain at least 2 characters"],
+      maxlength: [100, "Full name cannot exceed 100 characters"],
+    },
+
     username: {
       type: String,
-      required: [true, "Username is required"],
       unique: true,
+      sparse: true, // allows null/undefined values
       lowercase: true,
       trim: true,
       minlength: [3, "Username must contain at least 3 characters"],
@@ -99,22 +120,6 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
 
-    fullName: {
-      firstName: {
-        type: String,
-        required: [true, "First name is required"],
-        trim: true,
-        minlength: [2, "First name must contain at least 2 characters"],
-        maxlength: [50, "First name cannot exceed 50 characters"],
-      },
-
-      lastName: {
-        type: String,
-        trim: true,
-        maxlength: [50, "Last name cannot exceed 50 characters"],
-      },
-    },
-
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -122,7 +127,6 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       index: true,
-
       match: [
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         "Please enter a valid email address",
@@ -135,30 +139,62 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
 
-    profileImage: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
     phone: {
       type: String,
       default: "",
       trim: true,
     },
 
+    profileImage: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     // ==========================================
-    // ROLE
+    // SOCIAL LINKS
+    // ==========================================
+
+    socialLinks: {
+      linkedin: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      github: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+    },
+
+    // ==========================================
+    // ROLE & USER TYPE
     // ==========================================
 
     role: {
       type: String,
       enum: {
-        values: ["user", "admin"],
+        values: ["user", "admin", "employer"],
         message: "Invalid user role",
       },
       default: "user",
       index: true,
+    },
+
+    // student | fresher | professional
+    experienceLevel: {
+      type: String,
+      enum: [
+        "student",
+        "fresher",
+        "professional",
+        "0-1 years",
+        "1-3 years",
+        "3-5 years",
+        "5+ years",
+      ],
+      default: null,
     },
 
     // ==========================================
@@ -179,12 +215,10 @@ const userSchema = new mongoose.Schema(
         type: String,
         trim: true,
       },
-
       state: {
         type: String,
         trim: true,
       },
-
       country: {
         type: String,
         default: "India",
@@ -225,20 +259,6 @@ const userSchema = new mongoose.Schema(
         maxlength: [50, "Skill cannot exceed 50 characters"],
       },
     ],
-
-    experienceLevel: {
-      type: String,
-      enum: [
-        "fresher",
-        "student",
-        "professional",
-        "0-1 years",
-        "1-3 years",
-        "3-5 years",
-        "5+ years",
-      ],
-      default: "fresher",
-    },
 
     // ==========================================
     // EDUCATION
@@ -288,7 +308,6 @@ const userSchema = new mongoose.Schema(
           min: [0, "Salary cannot be negative"],
           default: 0,
         },
-
         max: {
           type: Number,
           min: [0, "Salary cannot be negative"],
@@ -327,10 +346,9 @@ const userSchema = new mongoose.Schema(
       type: Date,
     },
   },
-
   {
     timestamps: true,
-  },
+  }
 );
 
 // ==========================================
