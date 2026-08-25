@@ -9,6 +9,7 @@ import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 
 import Protected from "./components/Protected";
+import SelectRole from "./pages/SelectRole";
 
 // import Home from "./pages/Home";
 // import Jobs from "./pages/Jobs";
@@ -22,6 +23,8 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+
+        <Route path="/select-role" element={<SelectRole />} />
 
         {/* Protected Routes */}
         {/* <Route

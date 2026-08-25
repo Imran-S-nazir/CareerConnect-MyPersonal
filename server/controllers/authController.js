@@ -21,7 +21,7 @@ const setTokenCookie = (res, token) => {
 // ==========================================
 // REGISTER
 // ==========================================
-const registerUser = async (req, res, next) => {
+module.exports.registerUser = async (req, res, next) => {
   try {
     const { fullName, username, email, phone, password, confirmPassword } = req.body;
 
@@ -138,7 +138,7 @@ const registerUser = async (req, res, next) => {
 // ==========================================
 // LOGIN
 // ==========================================
-const loginUser = async (req, res, next) => {
+module.exports.loginUser = async (req, res, next) => {
   try {
     const { email, username, password } = req.body;
 
@@ -196,7 +196,7 @@ const loginUser = async (req, res, next) => {
 // ==========================================
 // LOGOUT
 // ==========================================
-const logoutUser = async (req, res) => {
+module.exports.logoutUser = async (req, res) => {
   res.clearCookie("token");
 
   return res.status(200).json({
@@ -206,7 +206,7 @@ const logoutUser = async (req, res) => {
 };
 
 
-const getMe = async (req, res) => {
+module.exports.getMe = async (req, res) => {
   return res.status(200).json({
     success: true,
     user: {
@@ -223,9 +223,48 @@ const getMe = async (req, res) => {
 
 
 
-module.exports = {
-  registerUser,
-  loginUser,
-  logoutUser,
-  getMe
+module.exports.updateExperienceLevel = async (req, res) => {
+  try {
+    const { experienceLevel } = req.body;
+
+    const allowed = ["student", "fresher", "professional"];
+    if (!allowed.includes(experienceLevel)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid experience level",
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id, // auth middleware se aayega
+      { 
+        experienceLevel,
+        isProfileComplete: true   // optional
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile type updated successfully",
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
 };
+
+
+
+
