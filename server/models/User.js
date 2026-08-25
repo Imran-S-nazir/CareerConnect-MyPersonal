@@ -154,10 +154,10 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: {
-        values: ["student", "admin"],
+        values: ["user", "admin"],
         message: "Invalid user role",
       },
-      default: "student",
+      default: "user",
       index: true,
     },
 
@@ -231,12 +231,13 @@ const userSchema = new mongoose.Schema(
       enum: [
         "fresher",
         "student",
+        "professional",
         "0-1 years",
         "1-3 years",
         "3-5 years",
         "5+ years",
       ],
-      default: "student",
+      default: "fresher",
     },
 
     // ==========================================

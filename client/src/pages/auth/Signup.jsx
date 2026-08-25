@@ -10,49 +10,121 @@ import {
 import api from "../../api/api";
 
 const UserIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+    />
   </svg>
 );
 
 const AtIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+    />
   </svg>
 );
 
 const MailIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5A2.5 2.5 0 015.5 5h13A2.5 2.5 0 0121 7.5v9a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 16.5v-9z" />
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 7.5A2.5 2.5 0 015.5 5h13A2.5 2.5 0 0121 7.5v9a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 16.5v-9z"
+    />
     <path strokeLinecap="round" strokeLinejoin="round" d="M4 7l8 6 8-6" />
   </svg>
 );
 
 const PhoneIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5.5A2.5 2.5 0 015.5 3h1.1c.8 0 1.5.5 1.7 1.3l.7 2.4c.2.6 0 1.3-.5 1.7l-1.1.9a12.1 12.1 0 006.4 6.4l.9-1.1c.4-.5 1.1-.7 1.7-.5l2.4.7c.8.2 1.3.9 1.3 1.7v1.1A2.5 2.5 0 0118.5 21H17C9.3 21 3 14.7 3 7V5.5z" />
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 5.5A2.5 2.5 0 015.5 3h1.1c.8 0 1.5.5 1.7 1.3l.7 2.4c.2.6 0 1.3-.5 1.7l-1.1.9a12.1 12.1 0 006.4 6.4l.9-1.1c.4-.5 1.1-.7 1.7-.5l2.4.7c.8.2 1.3.9 1.3 1.7v1.1A2.5 2.5 0 0118.5 21H17C9.3 21 3 14.7 3 7V5.5z"
+    />
   </svg>
 );
 
 const LockIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
     <rect x="4" y="10" width="16" height="10" rx="2" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8 10V7a4 4 0 018 0v3" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M8 10V7a4 4 0 018 0v3"
+    />
   </svg>
 );
 
 const EyeIcon = ({ hidden = false }) => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
     {hidden ? (
       <>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.6 10.6a2 2 0 002.8 2.8" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.9 4.2A10.8 10.8 0 0112 4c5 0 8.8 3.3 10 8a10.8 10.8 0 01-3 5.1" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.6 6.6A11 11 0 002 12c1.2 4.7 5 8 10 8a10.7 10.7 0 004.2-.8" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M10.6 10.6a2 2 0 002.8 2.8"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9.9 4.2A10.8 10.8 0 0112 4c5 0 8.8 3.3 10 8a10.8 10.8 0 01-3 5.1"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M6.6 6.6A11 11 0 002 12c1.2 4.7 5 8 10 8a10.7 10.7 0 004.2-.8"
+        />
       </>
     ) : (
       <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"
+        />
         <circle cx="12" cy="12" r="2.5" />
       </>
     )}
@@ -96,12 +168,13 @@ const Signup = () => {
       const response = await api.post("/auth/register", formData);
       const { user } = response.data;
       dispatch(signupSuccess({ user }));
-      navigate("/student");
+      navigate("/select-role");
     } catch (err) {
       dispatch(
         signupFailure(
-          err.response?.data?.message || "Something went wrong. Please try again."
-        )
+          err.response?.data?.message ||
+            "Something went wrong. Please try again.",
+        ),
       );
     }
   };
@@ -110,7 +183,6 @@ const Signup = () => {
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80">
         <div className="grid lg:grid-cols-2 min-h-[680px]">
-
           {/* Left Brand Panel */}
           <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 text-white p-12 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -122,8 +194,12 @@ const Signup = () => {
                   C
                 </div>
                 <div>
-                  <h1 className="text-xl font-semibold tracking-tight">CareerConnect</h1>
-                  <p className="text-xs text-slate-400">Career & Opportunity Platform</p>
+                  <h1 className="text-xl font-semibold tracking-tight">
+                    CareerConnect
+                  </h1>
+                  <p className="text-xs text-slate-400">
+                    Career & Opportunity Platform
+                  </p>
                 </div>
               </div>
 
@@ -132,7 +208,8 @@ const Signup = () => {
                 <span className="text-blue-400">Start today.</span>
               </h2>
               <p className="text-slate-300 text-[15px] leading-relaxed max-w-sm">
-                Create your account and unlock opportunities designed to help you grow, connect, and succeed.
+                Create your account and unlock opportunities designed to help
+                you grow, connect, and succeed.
               </p>
             </div>
 
@@ -160,11 +237,15 @@ const Signup = () => {
                 <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
                   C
                 </div>
-                <span className="text-xl font-semibold text-slate-900">CareerConnect</span>
+                <span className="text-xl font-semibold text-slate-900">
+                  CareerConnect
+                </span>
               </div>
 
               <div className="mb-7">
-                <p className="text-sm font-medium text-blue-600 mb-1.5">Get started</p>
+                <p className="text-sm font-medium text-blue-600 mb-1.5">
+                  Get started
+                </p>
                 <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
                   Create your account
                 </h2>
