@@ -8,6 +8,7 @@ import {
   loginFailure,
   clearMessages,
 } from "../../redux/features/authSlice";
+import { getDashboardPath } from "../../utils/dashboardRedirect";
 
 const MailIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -72,11 +73,12 @@ const Login = () => {
       const { user, token } = response.data;
       dispatch(loginSuccess({ user, token }));
 
-      // Navigate based on role
+      // Navigate based on role & userType
       if (user.role === "employer") {
         navigate("/employer/dashboard");
       } else {
-        navigate("/student/dashboard");
+        const dest = getDashboardPath(user.userType);
+        navigate(dest, { replace: true });
       }
     } catch (err) {
       dispatch(

@@ -8,6 +8,7 @@ import {
   clearMessages,
 } from "../../redux/features/authSlice";
 import api from "../../api/api";
+import { getDashboardPath } from "../../utils/dashboardRedirect";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -220,7 +221,8 @@ const Signup = () => {
 
       const res = await api.post("/auth/register", payload);
       dispatch(signupSuccess({ user: res.data.user }));
-      navigate("/student/dashboard");
+      const dest = getDashboardPath(res.data.user?.userType || userType);
+      navigate(dest, { replace: true });
     } catch (err) {
       const message =
         err.response?.data?.message || "Registration failed. Please try again.";

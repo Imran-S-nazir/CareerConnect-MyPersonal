@@ -1,4 +1,5 @@
 const User = require("../models/User.js");
+const StudentProfile = require("../models/StudentProfile.js");
 const jwt = require("jsonwebtoken");
 
 // Generate JWT
@@ -133,7 +134,7 @@ module.exports.registerUser = async (req, res, next) => {
       email: normalizedEmail,
       phone: phone.trim(),
       password,
-      experienceLevel: userType,
+      userType,
       socialLinks: {
         linkedin: linkedin?.trim() || "",
         github: github?.trim() || "",
@@ -142,7 +143,7 @@ module.exports.registerUser = async (req, res, next) => {
       username: generateUsername(normalizedEmail), // auto generate
     };
 
-    // -------------------- Map type-specific data --------------------
+    // -------------------- Validate type-specific data --------------------
     if (userType === "student") {
       if (!college || !course || !year || !graduationYear) {
         return res.status(400).json({
@@ -150,69 +151,44 @@ module.exports.registerUser = async (req, res, next) => {
           message: "College, course, year and graduation year are required for students",
         });
       }
-
-      userData.education = [
-        {
-          institution: college.trim(),
-          degree: course.trim(),
-          startYear: Number(graduationYear) - Number(year),
-          endYear: Number(graduationYear),
-        },
-      ];
-    }
-
-    if (userType === "fresher") {
+    } else if (userType === "fresher") {
       if (!highestQualification || !passoutYear) {
         return res.status(400).json({
           success: false,
           message: "Highest qualification and passout year are required for freshers",
         });
       }
-
-      userData.education = [
-        {
-          institution: highestQualification.trim(),
-          degree: highestQualification.trim(),
-          endYear: Number(passoutYear),
-        },
-      ];
-
-      if (skills?.trim()) {
-        userData.skills = skills
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-      }
-    }
-
-    if (userType === "professional") {
+    } else if (userType === "professional") {
       if (!currentCompany || !jobTitle) {
         return res.status(400).json({
           success: false,
           message: "Current company and job title are required for professionals",
         });
       }
-
-      userData.experience = [
-        {
-          company: currentCompany.trim(),
-          jobTitle: jobTitle.trim(),
-          currentlyWorking: true,
-        },
-      ];
-
-      // Override experienceLevel with years if provided
-      if (experienceYears) {
-        userData.experienceLevel = experienceYears;
-      }
-
-      if (industry?.trim()) {
-        userData.careerGoal = industry.trim();
-      }
     }
 
     // -------------------- Create user --------------------
     const user = await User.create(userData);
+
+    // -------------------- Create student profile if student --------------------
+    if (userType === "student") {
+      try {
+        await StudentProfile.create({
+          userId: user._id,
+          education: [
+            {
+              institution: college.trim(),
+              degree: course.trim(),
+              startYear: Number(graduationYear) - Number(year),
+              endYear: Number(graduationYear),
+              currentlyStudying: true,
+            },
+          ],
+        });
+      } catch (profileErr) {
+        console.error("Error creating student profile during registration:", profileErr);
+      }
+    }
 
     const token = generateToken(user._id);
     setTokenCookie(res, token);
@@ -222,6 +198,7 @@ module.exports.registerUser = async (req, res, next) => {
       message: "Account created successfully",
       token,
       user: {
+        _id: user._id,
         id: user._id,
         fullName: user.fullName,
         username: user.username,
@@ -229,7 +206,9 @@ module.exports.registerUser = async (req, res, next) => {
         phone: user.phone,
         profileImage: user.profileImage,
         role: user.role,
-        experienceLevel: user.experienceLevel,
+        userType: user.userType,
+        profileCompletion: user.profileCompletion || 0,
+        isProfileComplete: user.isProfileComplete || false,
         socialLinks: user.socialLinks,
       },
     });
@@ -289,6 +268,7 @@ module.exports.loginUser = async (req, res, next) => {
       message: "Login successful",
       token,
       user: {
+        _id: user._id,
         id: user._id,
         fullName: user.fullName,
         username: user.username,
@@ -296,7 +276,9 @@ module.exports.loginUser = async (req, res, next) => {
         phone: user.phone,
         profileImage: user.profileImage,
         role: user.role,
-        experienceLevel: user.experienceLevel,
+        userType: user.userType,
+        profileCompletion: user.profileCompletion || 0,
+        isProfileComplete: user.isProfileComplete || false,
         socialLinks: user.socialLinks,
       },
     });
@@ -328,6 +310,7 @@ module.exports.getMe = async (req, res) => {
   return res.status(200).json({
     success: true,
     user: {
+      _id: req.user._id,
       id: req.user._id,
       fullName: req.user.fullName,
       username: req.user.username,
@@ -335,36 +318,35 @@ module.exports.getMe = async (req, res) => {
       phone: req.user.phone,
       profileImage: req.user.profileImage,
       role: req.user.role,
-      experienceLevel: req.user.experienceLevel,
+      userType: req.user.userType,
+      profileCompletion: req.user.profileCompletion || 0,
+      isProfileComplete: req.user.isProfileComplete || false,
       socialLinks: req.user.socialLinks,
-      education: req.user.education,
-      experience: req.user.experience,
-      skills: req.user.skills,
-      isProfileComplete: req.user.isProfileComplete,
+      isActive: req.user.isActive,
     },
   });
 };
 
 // ==========================================
-// UPDATE EXPERIENCE LEVEL (optional - agar alag se update karna ho)
+// UPDATE USER TYPE / EXPERIENCE LEVEL
 // ==========================================
 module.exports.updateExperienceLevel = async (req, res, next) => {
   try {
-    const { experienceLevel } = req.body;
+    const { userType, experienceLevel } = req.body;
+    const selectedType = userType || experienceLevel;
 
     const allowed = ["student", "fresher", "professional"];
-    if (!allowed.includes(experienceLevel)) {
+    if (!allowed.includes(selectedType)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid experience level. Allowed: student, fresher, professional",
+        message: "Invalid user type. Allowed: student, fresher, professional",
       });
     }
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
       {
-        experienceLevel,
-        isProfileComplete: true,
+        userType: selectedType,
       },
       { new: true }
     ).select("-password");
@@ -378,12 +360,15 @@ module.exports.updateExperienceLevel = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: "Profile type updated successfully",
+      message: "User type updated successfully",
       user: {
+        _id: user._id,
         id: user._id,
         fullName: user.fullName,
         email: user.email,
-        experienceLevel: user.experienceLevel,
+        userType: user.userType,
+        profileCompletion: user.profileCompletion || 0,
+        isProfileComplete: user.isProfileComplete || false,
         role: user.role,
       },
     });
@@ -392,8 +377,9 @@ module.exports.updateExperienceLevel = async (req, res, next) => {
   }
 };
 
-// authController.js me add karo
-
+// ==========================================
+// CHECK EMAIL
+// ==========================================
 module.exports.checkEmail = async (req, res) => {
   try {
     const { email } = req.body;
