@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import api from "../api/api.jsx"
-// Agar aap role save karna chahte ho Redux me to yahan action import kar sakte ho
+import api from "../api/api.jsx";
+import { updateUserProfile } from "../redux/features/authSlice";
+import { getDashboardPath } from "../utils/dashboardRedirect";
 
 const SelectRole = () => {
   const navigate = useNavigate();
@@ -99,16 +100,19 @@ const SelectRole = () => {
 
     try {
       const res = await api.patch("/auth/update-experience-level", {
+        userType: selected,
         experienceLevel: selected, // "student" | "fresher" | "professional"
       });
 
-      // Redux me user update kar sakte ho (optional)
-      // dispatch(updateUser(res.data.user));
+      if (res?.data?.user) {
+        dispatch(updateUserProfile(res.data.user));
+      } else {
+        dispatch(updateUserProfile({ userType: selected }));
+      }
 
-      // Navigate
-      if (selected === "student") navigate("/student");
-      else if (selected === "fresher") navigate("/fresher");
-      else navigate("/professional");
+      // Navigate dynamically to role dashboard
+      const dest = getDashboardPath(selected);
+      navigate(dest, { replace: true });
     } catch (err) {
       console.error(err);
       // error message dikhao

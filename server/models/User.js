@@ -2,95 +2,9 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 // ==========================================
-// EDUCATION SUB-SCHEMA
-// ==========================================
-const educationSchema = new mongoose.Schema(
-  {
-    institution: {
-      type: String,
-      required: [true, "Institution name is required"],
-      trim: true,
-      maxlength: [150, "Institution name cannot exceed 150 characters"],
-    },
-
-    degree: {
-      type: String,
-      required: [true, "Degree is required"],
-      trim: true,
-      maxlength: [100, "Degree cannot exceed 100 characters"],
-    },
-
-    fieldOfStudy: {
-      type: String,
-      trim: true,
-      maxlength: [100, "Field of study cannot exceed 100 characters"],
-    },
-
-    startYear: {
-      type: Number,
-      min: [1950, "Invalid start year"],
-      max: [2100, "Invalid start year"],
-    },
-
-    endYear: {
-      type: Number,
-      min: [1950, "Invalid end year"],
-      max: [2100, "Invalid end year"],
-    },
-
-    grade: {
-      type: String,
-      trim: true,
-      maxlength: [20, "Grade cannot exceed 20 characters"],
-    },
-  },
-  { _id: false }
-);
-
-// ==========================================
-// EXPERIENCE SUB-SCHEMA
-// ==========================================
-const experienceSchema = new mongoose.Schema(
-  {
-    company: {
-      type: String,
-      required: [true, "Company name is required"],
-      trim: true,
-      maxlength: [150, "Company name cannot exceed 150 characters"],
-    },
-
-    jobTitle: {
-      type: String,
-      required: [true, "Job title is required"],
-      trim: true,
-      maxlength: [100, "Job title cannot exceed 100 characters"],
-    },
-
-    startDate: {
-      type: Date,
-    },
-
-    endDate: {
-      type: Date,
-    },
-
-    currentlyWorking: {
-      type: Boolean,
-      default: false,
-    },
-
-    description: {
-      type: String,
-      trim: true,
-      maxlength: [1000, "Description cannot exceed 1000 characters"],
-    },
-  },
-  { _id: false }
-);
-
-// ==========================================
 // USER SCHEMA
 // ==========================================
+
 const userSchema = new mongoose.Schema(
   {
     // ==========================================
@@ -108,7 +22,7 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       unique: true,
-      sparse: true, // allows null/undefined values
+      sparse: true,
       lowercase: true,
       trim: true,
       minlength: [3, "Username must contain at least 3 characters"],
@@ -139,6 +53,10 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
 
+    // ==========================================
+    // COMMON ACCOUNT INFORMATION
+    // ==========================================
+
     phone: {
       type: String,
       default: "",
@@ -161,6 +79,7 @@ const userSchema = new mongoose.Schema(
         default: "",
         trim: true,
       },
+
       github: {
         type: String,
         default: "",
@@ -169,151 +88,36 @@ const userSchema = new mongoose.Schema(
     },
 
     // ==========================================
-    // ROLE & USER TYPE
+    // ACCOUNT ROLE
     // ==========================================
 
     role: {
       type: String,
+
       enum: {
         values: ["user", "admin", "employer"],
         message: "Invalid user role",
       },
+
       default: "user",
       index: true,
     },
 
-    // student | fresher | professional
-    experienceLevel: {
-      type: String,
-      enum: [
-        "student",
-        "fresher",
-        "professional",
-        "0-1 years",
-        "1-3 years",
-        "3-5 years",
-        "5+ years",
-      ],
-      default: null,
-    },
-
     // ==========================================
-    // PERSONAL INFORMATION
+    // USER TYPE
     // ==========================================
 
-    dateOfBirth: {
-      type: Date,
-    },
-
-    gender: {
+    userType: {
       type: String,
-      enum: ["male", "female", "other", "prefer-not-to-say"],
-    },
 
-    location: {
-      city: {
-        type: String,
-        trim: true,
+      enum: {
+        values: ["student", "fresher", "professional"],
+        message: "Invalid user type",
       },
-      state: {
-        type: String,
-        trim: true,
-      },
-      country: {
-        type: String,
-        default: "India",
-        trim: true,
-      },
-    },
 
-    bio: {
-      type: String,
-      default: "",
-      trim: true,
-      maxlength: [500, "Bio cannot exceed 500 characters"],
-    },
+      required: [true, "User type is required"],
 
-    // ==========================================
-    // CAREER INFORMATION
-    // ==========================================
-
-    careerGoal: {
-      type: String,
-      trim: true,
-      maxlength: [100, "Career goal cannot exceed 100 characters"],
       index: true,
-    },
-
-    interests: [
-      {
-        type: String,
-        trim: true,
-        maxlength: [50, "Interest cannot exceed 50 characters"],
-      },
-    ],
-
-    skills: [
-      {
-        type: String,
-        trim: true,
-        maxlength: [50, "Skill cannot exceed 50 characters"],
-      },
-    ],
-
-    // ==========================================
-    // EDUCATION
-    // ==========================================
-
-    education: {
-      type: [educationSchema],
-      default: [],
-    },
-
-    // ==========================================
-    // EXPERIENCE
-    // ==========================================
-
-    experience: {
-      type: [experienceSchema],
-      default: [],
-    },
-
-    // ==========================================
-    // JOB PREFERENCES
-    // ==========================================
-
-    jobPreferences: {
-      jobTypes: [
-        {
-          type: String,
-          enum: ["full-time", "part-time", "internship", "freelance"],
-        },
-      ],
-
-      preferredLocations: [
-        {
-          type: String,
-          trim: true,
-        },
-      ],
-
-      remote: {
-        type: Boolean,
-        default: false,
-      },
-
-      expectedSalary: {
-        min: {
-          type: Number,
-          min: [0, "Salary cannot be negative"],
-          default: 0,
-        },
-        max: {
-          type: Number,
-          min: [0, "Salary cannot be negative"],
-          default: 0,
-        },
-      },
     },
 
     // ==========================================
@@ -323,13 +127,14 @@ const userSchema = new mongoose.Schema(
     profileCompletion: {
       type: Number,
       default: 0,
-      min: 0,
-      max: 100,
+      min: [0, "Profile completion cannot be below 0"],
+      max: [100, "Profile completion cannot exceed 100"],
     },
 
     isProfileComplete: {
       type: Boolean,
       default: false,
+      index: true,
     },
 
     // ==========================================
@@ -346,24 +151,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
     },
   },
+
   {
     timestamps: true,
   }
 );
-
-// ==========================================
-// INDEXES
-// ==========================================
-
-userSchema.index({
-  careerGoal: 1,
-  skills: 1,
-});
-
-userSchema.index({
-  "location.city": 1,
-  "location.state": 1,
-});
 
 // ==========================================
 // PASSWORD HASHING
@@ -375,6 +167,7 @@ userSchema.pre("save", async function () {
   }
 
   const salt = await bcrypt.genSalt(12);
+
   this.password = await bcrypt.hash(this.password, salt);
 });
 

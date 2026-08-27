@@ -1,9 +1,9 @@
-
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   user: null,
   loading: false,
+  isInitialized: false, // Tracks if initial /me check has occurred
   error: null,
   success: null,
 };
@@ -13,6 +13,32 @@ const authSlice = createSlice({
   initialState,
 
   reducers: {
+    // ================= HYDRATION / SET USER =================
+
+    setUser: (state, action) => {
+      state.user = action.payload;
+      state.loading = false;
+      state.isInitialized = true;
+      state.error = null;
+    },
+
+    setLoading: (state, action) => {
+      state.loading = action.payload;
+    },
+
+    setInitialized: (state, action) => {
+      state.isInitialized = action.payload;
+    },
+
+    updateUserProfile: (state, action) => {
+      if (state.user) {
+        state.user = {
+          ...state.user,
+          ...action.payload,
+        };
+      }
+    },
+
     // ================= LOGIN =================
 
     loginStart: (state) => {
@@ -24,6 +50,7 @@ const authSlice = createSlice({
     loginSuccess: (state, action) => {
       state.loading = false;
       state.user = action.payload.user;
+      state.isInitialized = true;
       state.error = null;
       state.success = "Login successful";
     },
@@ -45,6 +72,7 @@ const authSlice = createSlice({
     signupSuccess: (state, action) => {
       state.loading = false;
       state.user = action.payload.user;
+      state.isInitialized = true;
       state.error = null;
       state.success = "Account created successfully";
     },
@@ -67,6 +95,7 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.loading = false;
+      state.isInitialized = true;
       state.error = null;
       state.success = null;
     },
@@ -74,6 +103,11 @@ const authSlice = createSlice({
 });
 
 export const {
+  setUser,
+  setLoading,
+  setInitialized,
+  updateUserProfile,
+
   loginStart,
   loginSuccess,
   loginFailure,
