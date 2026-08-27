@@ -2,6 +2,142 @@ const User = require("../models/User.js");
 const StudentProfile = require("../models/StudentProfile.js");
 const jwt = require("jsonwebtoken");
 
+
+const crypto = require("crypto");
+const PendingOTP = require("../models/PendingOTP");
+const sendEmail = require("../utils/sendEmail");
+
+// Generate 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// ==========================================
+// SEND OTP (Step 1 Continue pe call hoga)
+// ==========================================
+module.exports.sendOTP = async (req, res, next) => {
+  try {
+    const { email, fullName } = req.body;
+
+    if (!email?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Already registered?
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        field: "email",
+        message: "Email is already registered",
+      });
+    }
+
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 1 * 60 * 1000); // 1 minutes
+
+    // Upsert pending OTP
+    await PendingOTP.findOneAndUpdate(
+      { email: normalizedEmail },
+      {
+        email: normalizedEmail,
+        otp,
+        expiresAt,
+        isVerified: false,
+      },
+      { upsert: true, new: true }
+    );
+
+    // Send email
+    await sendEmail({
+      to: normalizedEmail,
+      subject: "Your CareerConnect verification code",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #1e40af; margin-bottom: 8px;">Verify your email</h2>
+          <p style="color: #475569;">Hi${fullName ? ` ${fullName}` : ""},</p>
+          <p style="color: #475569;">Use this code to continue creating your CareerConnect account:</p>
+          <div style="background: #f1f5f9; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
+            <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #0f172a;">${otp}</span>
+          </div>
+          <p style="color: #94a3b8; font-size: 14px;">This code expires in 1 minutes.</p>
+          <p style="color: #94a3b8; font-size: 13px;">If you didn't request this, ignore this email.</p>
+        </div>
+      `,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent to your email",
+      email: normalizedEmail,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==========================================
+// VERIFY OTP
+// ==========================================
+module.exports.verifyOTP = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP are required",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const record = await PendingOTP.findOne({ email: normalizedEmail });
+
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: "No OTP found. Please request a new one.",
+      });
+    }
+
+    if (record.expiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
+    }
+
+    if (record.otp !== otp.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    // Mark verified
+    record.isVerified = true;
+    await record.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+      email: normalizedEmail,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
 // Generate JWT
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {

@@ -120,6 +120,23 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
 
+
+    // ========== EMAIL VERIFICATION ==========
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailOTP: {
+      type: String,
+      select: false,
+    },
+
+    emailOTPExpires: {
+      type: Date,
+      select: false,
+    },
+
     // ==========================================
     // PROFILE STATUS
     // ==========================================

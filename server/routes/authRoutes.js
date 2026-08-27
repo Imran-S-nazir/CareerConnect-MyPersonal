@@ -12,4 +12,7 @@ router.get("/me",authMiddleware,authControllers.getMe)
 router.patch("/update-experience-level",authMiddleware,authControllers.updateExperienceLevel)
 router.post("/check-email", authControllers.checkEmail);
 
+router.post("/send-otp",authControllers.sendOTP);
+router.post("/verify-otp",authControllers.verifyOTP);
+
 module.exports = router
