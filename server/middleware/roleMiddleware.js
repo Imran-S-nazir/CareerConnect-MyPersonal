@@ -1,21 +1,47 @@
-/**
- * Role and UserType Authorization Middlewares
- */
+// server/middleware/roleMiddleware.js
 
-// Verify that the authenticated user matches one of the allowed user types (e.g. 'student', 'fresher', 'professional')
-const requireUserType = (...allowedTypes) => {
+/**
+ * Middleware to restrict access to users with role === 'employer'
+ */
+const requireEmployer = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+  }
+
+  if (req.user.role !== "employer" && req.user.userType !== "employer") {
+    return res.status(403).json({
+      success: false,
+      message: "Access restricted: Employer account required",
+    });
+  }
+
+  next();
+};
+
+/**
+ * Generic role authorization middleware
+ * @param {Array<string>} roles - e.g. ['employer', 'admin', 'user']
+ */
+const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: "Not authenticated",
+        message: "Authentication required",
       });
     }
 
-    if (!allowedTypes.includes(req.user.userType)) {
+    const hasRole =
+      roles.includes(req.user.role) ||
+      roles.includes(req.user.userType);
+
+    if (!hasRole) {
       return res.status(403).json({
         success: false,
-        message: `Access denied. Requires user type: ${allowedTypes.join(" or ")}. Your account is registered as '${req.user.userType}'.`,
+        message: "Access denied: Insufficient permissions",
       });
     }
 
@@ -23,20 +49,25 @@ const requireUserType = (...allowedTypes) => {
   };
 };
 
-// Verify that the authenticated user matches one of the allowed account roles (e.g. 'user', 'admin', 'employer')
-const requireRole = (...allowedRoles) => {
+/**
+ * UserType authorization middleware
+ * @param {Array<string>} userTypes - e.g. ['student', 'fresher', 'professional', 'employer']
+ */
+const requireUserType = (...userTypes) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: "Not authenticated",
+        message: "Authentication required",
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userType = req.user.userType || (req.user.role === "employer" ? "employer" : "student");
+
+    if (!userTypes.includes(userType) && !userTypes.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: `Access denied. Requires role: ${allowedRoles.join(" or ")}`,
+        message: `Access denied: Restricted to ${userTypes.join(" / ")} profiles`,
       });
     }
 
@@ -45,6 +76,7 @@ const requireRole = (...allowedRoles) => {
 };
 
 module.exports = {
-  requireUserType,
+  requireEmployer,
   requireRole,
+  requireUserType,
 };

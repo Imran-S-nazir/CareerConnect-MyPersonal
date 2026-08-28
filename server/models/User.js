@@ -111,13 +111,30 @@ const userSchema = new mongoose.Schema(
       type: String,
 
       enum: {
-        values: ["student", "fresher", "professional"],
+        values: ["student", "fresher", "professional", "employer"],
         message: "Invalid user type",
       },
 
       required: [true, "User type is required"],
 
       index: true,
+    },
+
+
+    // ========== EMAIL VERIFICATION ==========
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailOTP: {
+      type: String,
+      select: false,
+    },
+
+    emailOTPExpires: {
+      type: Date,
+      select: false,
     },
 
     // ==========================================
