@@ -1,5 +1,7 @@
 const User = require("../models/User.js");
 const StudentProfile = require("../models/StudentProfile.js");
+const FresherProfile = require("../models/FresherProfile.js");
+const ProfessionalProfile = require("../models/ProfessionalProfile.js");
 const jwt = require("jsonwebtoken");
 
 // Generate JWT
@@ -187,6 +189,73 @@ module.exports.registerUser = async (req, res, next) => {
         });
       } catch (profileErr) {
         console.error("Error creating student profile during registration:", profileErr);
+      }
+    } else if (userType === "fresher") {
+      try {
+        const skillsList = typeof skills === "string" && skills.trim()
+          ? skills.split(",").map((s) => ({ name: s.trim(), proficiency: "Intermediate" })).filter((s) => s.name)
+          : [{ name: "JavaScript", proficiency: "Intermediate" }, { name: "React", proficiency: "Intermediate" }];
+
+        await FresherProfile.create({
+          userId: user._id,
+          education: [
+            {
+              qualificationType: "B.Tech",
+              degree: highestQualification ? highestQualification.trim() : "Bachelor Degree",
+              institution: "College / University",
+              graduationYear: passoutYear ? Number(passoutYear) : 2024,
+              isHighest: true,
+            },
+          ],
+          skills: {
+            programmingLanguages: skillsList.slice(0, 2),
+            frameworks: skillsList.slice(2, 4),
+            databases: [{ name: "MongoDB", proficiency: "Intermediate" }],
+            tools: [{ name: "Git", proficiency: "Intermediate" }],
+            softSkills: [{ name: "Problem Solving", proficiency: "Advanced" }],
+            technical: [],
+          },
+          jobPreferences: {
+            preferredRoles: ["Full Stack Developer", "Junior Software Engineer"],
+            employmentTypes: ["Full-time", "Internship"],
+            preferredLocations: ["Bangalore", "Hyderabad", "Pune", "Remote"],
+            workMode: ["Hybrid", "Remote"],
+            expectedSalary: { min: 4.5, max: 8.0, currency: "INR (LPA)" },
+          },
+        });
+      } catch (fresherErr) {
+        console.error("Error creating fresher profile during registration:", fresherErr);
+      }
+    } else if (userType === "professional") {
+      try {
+        await ProfessionalProfile.create({
+          userId: user._id,
+          professionalHeadline: `${jobTitle || "Software Engineer"} at ${currentCompany || "Technology Company"}`,
+          careerSpecialization: industry || "Information Technology",
+          currentEmployment: {
+            company: currentCompany ? currentCompany.trim() : "Current Company",
+            jobTitle: jobTitle ? jobTitle.trim() : "Senior Software Engineer",
+            industry: industry ? industry.trim() : "Information Technology",
+            department: "Engineering",
+            currentlyWorking: true,
+            joiningDate: new Date(),
+          },
+          experience: [
+            {
+              companyName: currentCompany ? currentCompany.trim() : "Current Company",
+              jobTitle: jobTitle ? jobTitle.trim() : "Senior Software Engineer",
+              startDate: new Date(),
+              currentlyWorking: true,
+              description: `Working as ${jobTitle || "Engineer"} at ${currentCompany || "Company"}.`,
+            },
+          ],
+          totalExperienceYears: parseInt(experienceYears) || 3,
+          experienceLevelCategory: experienceYears || "3-5 years",
+          jobSearchStatus: "Open to Opportunities",
+          profileVisibility: "recruiter-only",
+        });
+      } catch (proErr) {
+        console.error("Error creating professional profile during registration:", proErr);
       }
     }
 
