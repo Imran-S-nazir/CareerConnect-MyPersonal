@@ -23,8 +23,14 @@ import FresherProfile from "./pages/fresher/FresherProfile";
 // Professional Pages
 import ProfessionalDashboard from "./pages/professional/ProfessionalDashboard";
 import ProfessionalProfile from "./pages/professional/ProfessionalProfile";
+
 import ForgotPassword from "./pages/auth/ForgotPassword.jsx";
 import EmployerRegister from "./pages/auth/EmployerRegister.jsx";
+
+// =============================
+// RESUME BUILDER (new)
+// =============================
+import ResumeBuilder from "./pages/resume/ResumeBuilder";
 
 function App() {
   return (
@@ -67,6 +73,19 @@ function App() {
         <Route element={<RoleProtectedRoute allowedRoles={["professional"]} />}>
           <Route path="/professional/dashboard" element={<ProfessionalDashboard />} />
           <Route path="/professional/profile" element={<ProfessionalProfile />} />
+        </Route>
+
+        {/* ============================= */}
+        {/* RESUME BUILDER – ALL ROLES    */}
+        {/* ============================= */}
+        <Route
+          element={
+            <RoleProtectedRoute
+              allowedRoles={["student", "fresher", "professional"]}
+            />
+          }
+        >
+          <Route path="/resume-builder" element={<ResumeBuilder />} />
         </Route>
 
         {/* ============================= */}
