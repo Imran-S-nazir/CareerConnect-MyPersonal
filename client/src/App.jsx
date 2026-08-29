@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // Auth Pages
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
+import EmployerRegister from "./pages/auth/EmployerRegister";
+import ForgotPassword from "./pages/auth/ForgotPassword.jsx";
 
 // Components & Route Protectors
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -23,8 +25,11 @@ import FresherProfile from "./pages/fresher/FresherProfile";
 // Professional Pages
 import ProfessionalDashboard from "./pages/professional/ProfessionalDashboard";
 import ProfessionalProfile from "./pages/professional/ProfessionalProfile";
-import ForgotPassword from "./pages/auth/ForgotPassword.jsx";
-import EmployerRegister from "./pages/auth/EmployerRegister.jsx";
+
+// Employer Pages
+import EmployerProfile from "./pages/employer/EmployerProfile";
+import EmployerDashboard from "./pages/employer/EmployerDashboard";
+import CompanyPublicProfile from "./pages/employer/CompanyPublicProfile";
 
 function App() {
   return (
@@ -35,9 +40,11 @@ function App() {
         {/* ============================= */}
         <Route path="/login" element={<Login />} />
         <Route path="/register/student" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/home" element={<Home />} />
         <Route path="/register/employer" element={<EmployerRegister />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/select-role" element={<SelectRole />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/companies/:companyId" element={<CompanyPublicProfile />} />
 
         {/* ============================= */}
         {/* BASE PROTECTED ROUTES         */}
@@ -67,6 +74,15 @@ function App() {
         <Route element={<RoleProtectedRoute allowedRoles={["professional"]} />}>
           <Route path="/professional/dashboard" element={<ProfessionalDashboard />} />
           <Route path="/professional/profile" element={<ProfessionalProfile />} />
+        </Route>
+
+        {/* ============================= */}
+        {/* ROLE PROTECTED: EMPLOYER      */}
+        {/* ============================= */}
+        <Route element={<RoleProtectedRoute allowedRoles={["employer"]} />}>
+          <Route path="/employer/dashboard" element={<EmployerDashboard />} />
+          <Route path="/employer/profile" element={<EmployerProfile />} />
+          <Route path="/employer/company" element={<CompanyPublicProfile />} />
         </Route>
 
         {/* ============================= */}

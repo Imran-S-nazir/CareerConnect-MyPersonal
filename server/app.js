@@ -1,9 +1,14 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+
 const authRoutes = require("./routes/authRoutes.js");
 const studentRoutes = require("./routes/studentRoutes.js");
+const fresherRoutes = require("./routes/fresherRoutes.js");
+const professionalRoutes = require("./routes/professionalRoutes.js");
+const employerRoutes = require("./routes/employerRoutes.js");
 const courseRoutes = require("./routes/courseRoutes.js");
+
 const app = express();
 
 // Middlewares
@@ -34,15 +39,20 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 app.use(cookieParser());
-
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/profile/student", studentRoutes);
+app.use("/api/fresher", fresherRoutes);
+app.use("/api/profile/fresher", fresherRoutes);
+app.use("/api/professional", professionalRoutes);
+app.use("/api/profile/professional", professionalRoutes);
+app.use("/api/employer", employerRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api", employerRoutes);
 
 module.exports = app;

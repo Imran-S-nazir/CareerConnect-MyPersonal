@@ -817,18 +817,17 @@ module.exports.registerEmployer = async (req, res, next) => {
     }
 
     // ---------- Create User (role: employer) ----------
-    // Note: userType is required in your schema — use a placeholder or make it optional for employers
     const user = await User.create({
-      fullName: contactPerson.trim(), // contact person as account name
+      fullName: contactPerson.trim(),
       email: normalizedEmail,
       phone: phone.trim(),
       password,
       role: "employer",
-      userType: "professional", // schema me required hai; employer ke liye safe default
+      userType: "employer",
       username: generateUsername(normalizedEmail),
       isEmailVerified: true,
-      isProfileComplete: true,
-      profileCompletion: 80,
+      isProfileComplete: false,
+      profileCompletion: 20,
     });
 
     // ---------- Create Employer Profile ----------
@@ -836,17 +835,27 @@ module.exports.registerEmployer = async (req, res, next) => {
       await EmployerProfile.create({
         userId: user._id,
         companyName: companyName.trim(),
-        contactPerson: contactPerson.trim(),
-        designation: designation.trim(),
+        officialEmail: normalizedEmail,
+        mobile: phone.trim(),
         website: website?.trim() || "",
-        companyType,
-        industry: industry.trim(),
-        location: location.trim(),
-        phone: phone.trim(),
+        companyType: companyType || "Private",
+        industry: industry?.trim() || "Information Technology",
+        headquarters: {
+          city: location?.trim() || "",
+          state: "",
+          country: "India",
+        },
+        recruiter: {
+          name: contactPerson.trim(),
+          designation: designation.trim(),
+          email: normalizedEmail,
+          phone: phone.trim(),
+        },
+        currentStep: 1,
+        profileCompletion: 20,
       });
     } catch (profileErr) {
       console.error("EmployerProfile creation error:", profileErr);
-      // User ban gaya, profile fail — optional: user delete kar sakte ho
     }
 
     // Cleanup OTP
