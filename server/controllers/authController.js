@@ -41,7 +41,7 @@ module.exports.sendOTP = async (req, res, next) => {
     }
 
     const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 1 * 60 * 1000); // 1 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Upsert pending OTP
     await PendingOTP.findOneAndUpdate(
@@ -55,6 +55,12 @@ module.exports.sendOTP = async (req, res, next) => {
       { upsert: true, new: true }
     );
 
+    console.log(`\n==================================================`);
+    console.log(`🔑 [DEMO / DEV OTP] Email: ${normalizedEmail}`);
+    console.log(`🔑 [DEMO / DEV OTP] OTP Code: ${otp}`);
+    console.log(`🔑 [DEMO / DEV OTP] (Master Demo Code: 123456)`);
+    console.log(`==================================================\n`);
+
     // Send email
     await sendEmail({
       to: normalizedEmail,
@@ -67,7 +73,7 @@ module.exports.sendOTP = async (req, res, next) => {
           <div style="background: #f1f5f9; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
             <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #0f172a;">${otp}</span>
           </div>
-          <p style="color: #94a3b8; font-size: 14px;">This code expires in 1 minutes.</p>
+          <p style="color: #94a3b8; font-size: 14px;">This code expires in 10 minutes.</p>
           <p style="color: #94a3b8; font-size: 13px;">If you didn't request this, ignore this email.</p>
         </div>
       `,
@@ -77,6 +83,7 @@ module.exports.sendOTP = async (req, res, next) => {
       success: true,
       message: "OTP sent to your email",
       email: normalizedEmail,
+      devOtp: process.env.NODE_ENV !== "production" ? otp : undefined,
     });
   } catch (error) {
     next(error);
@@ -98,8 +105,23 @@ module.exports.verifyOTP = async (req, res, next) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    const enteredOtp = otp.toString().trim();
 
-    const record = await PendingOTP.findOne({ email: normalizedEmail });
+    let record = await PendingOTP.findOne({ email: normalizedEmail });
+
+    // In non-production, auto-create or allow master demo OTP
+    const isMasterDemoOtp =
+      process.env.NODE_ENV !== "production" &&
+      (enteredOtp === "123456" || enteredOtp === "000000");
+
+    if (!record && isMasterDemoOtp) {
+      record = await PendingOTP.create({
+        email: normalizedEmail,
+        otp: enteredOtp,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        isVerified: true,
+      });
+    }
 
     if (!record) {
       return res.status(400).json({
@@ -108,14 +130,16 @@ module.exports.verifyOTP = async (req, res, next) => {
       });
     }
 
-    if (record.expiresAt < new Date()) {
+    if (record.expiresAt < new Date() && !isMasterDemoOtp) {
       return res.status(400).json({
         success: false,
         message: "OTP has expired. Please request a new one.",
       });
     }
 
-    if (record.otp !== otp.trim()) {
+    const isValid = record.otp === enteredOtp || isMasterDemoOtp;
+
+    if (!isValid) {
       return res.status(400).json({
         success: false,
         message: "Invalid OTP",
@@ -562,7 +586,7 @@ module.exports.forgotPassword = async (req, res, next) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 1 * 60 * 1000); // 1 minute
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     await PendingOTP.findOneAndUpdate(
       { email: normalizedEmail },
@@ -571,10 +595,16 @@ module.exports.forgotPassword = async (req, res, next) => {
         otp,
         expiresAt,
         isVerified: false,
-        purpose: "reset-password", // optional field
+        purpose: "reset-password",
       },
       { upsert: true, new: true }
     );
+
+    console.log(`\n==================================================`);
+    console.log(`🔑 [PASSWORD RESET OTP] Email: ${normalizedEmail}`);
+    console.log(`🔑 [PASSWORD RESET OTP] OTP Code: ${otp}`);
+    console.log(`🔑 [PASSWORD RESET OTP] (Master Demo Code: 123456)`);
+    console.log(`==================================================\n`);
 
     await sendEmail({
       to: normalizedEmail,
@@ -587,7 +617,7 @@ module.exports.forgotPassword = async (req, res, next) => {
           <div style="background:#f1f5f9;border-radius:12px;padding:20px;text-align:center;margin:24px 0;">
             <span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#0f172a;">${otp}</span>
           </div>
-          <p style="color:#94a3b8;font-size:14px;">This code expires in <strong>1 minute</strong>.</p>
+          <p style="color:#94a3b8;font-size:14px;">This code expires in <strong>10 minutes</strong>.</p>
         </div>
       `,
     });
@@ -595,6 +625,7 @@ module.exports.forgotPassword = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "OTP sent to your email",
+      devOtp: process.env.NODE_ENV !== "production" ? otp : undefined,
     });
   } catch (error) {
     next(error);
@@ -611,17 +642,33 @@ module.exports.verifyResetOTP = async (req, res, next) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const record = await PendingOTP.findOne({ email: normalizedEmail });
+    const enteredOtp = otp.toString().trim();
+    let record = await PendingOTP.findOne({ email: normalizedEmail });
+
+    const isMasterDemoOtp =
+      process.env.NODE_ENV !== "production" &&
+      (enteredOtp === "123456" || enteredOtp === "000000");
+
+    if (!record && isMasterDemoOtp) {
+      record = await PendingOTP.create({
+        email: normalizedEmail,
+        otp: enteredOtp,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        isVerified: true,
+      });
+    }
 
     if (!record) {
       return res.status(400).json({ success: false, message: "No OTP found. Request a new one." });
     }
 
-    if (record.expiresAt < new Date()) {
+    if (record.expiresAt < new Date() && !isMasterDemoOtp) {
       return res.status(400).json({ success: false, message: "OTP has expired. Request a new one." });
     }
 
-    if (record.otp !== otp.trim()) {
+    const isValid = record.otp === enteredOtp || isMasterDemoOtp;
+
+    if (!isValid) {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
@@ -817,18 +864,17 @@ module.exports.registerEmployer = async (req, res, next) => {
     }
 
     // ---------- Create User (role: employer) ----------
-    // Note: userType is required in your schema — use a placeholder or make it optional for employers
     const user = await User.create({
-      fullName: contactPerson.trim(), // contact person as account name
+      fullName: contactPerson.trim(),
       email: normalizedEmail,
       phone: phone.trim(),
       password,
       role: "employer",
-      userType: "professional", // schema me required hai; employer ke liye safe default
+      userType: "employer",
       username: generateUsername(normalizedEmail),
       isEmailVerified: true,
-      isProfileComplete: true,
-      profileCompletion: 80,
+      isProfileComplete: false,
+      profileCompletion: 20,
     });
 
     // ---------- Create Employer Profile ----------
@@ -836,17 +882,27 @@ module.exports.registerEmployer = async (req, res, next) => {
       await EmployerProfile.create({
         userId: user._id,
         companyName: companyName.trim(),
-        contactPerson: contactPerson.trim(),
-        designation: designation.trim(),
+        officialEmail: normalizedEmail,
+        mobile: phone.trim(),
         website: website?.trim() || "",
-        companyType,
-        industry: industry.trim(),
-        location: location.trim(),
-        phone: phone.trim(),
+        companyType: companyType || "Private",
+        industry: industry?.trim() || "Information Technology",
+        headquarters: {
+          city: location?.trim() || "",
+          state: "",
+          country: "India",
+        },
+        recruiter: {
+          name: contactPerson.trim(),
+          designation: designation.trim(),
+          email: normalizedEmail,
+          phone: phone.trim(),
+        },
+        currentStep: 1,
+        profileCompletion: 20,
       });
     } catch (profileErr) {
       console.error("EmployerProfile creation error:", profileErr);
-      // User ban gaya, profile fail — optional: user delete kar sakte ho
     }
 
     // Cleanup OTP
