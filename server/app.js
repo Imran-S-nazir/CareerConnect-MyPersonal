@@ -7,6 +7,7 @@ const studentRoutes = require("./routes/studentRoutes.js");
 const fresherRoutes = require("./routes/fresherRoutes.js");
 const professionalRoutes = require("./routes/professionalRoutes.js");
 const employerRoutes = require("./routes/employerRoutes.js");
+const courseRoutes = require("./routes/courseRoutes.js");
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use("/api/profile/fresher", fresherRoutes);
 app.use("/api/professional", professionalRoutes);
 app.use("/api/profile/professional", professionalRoutes);
 app.use("/api/employer", employerRoutes);
+app.use("/api/courses", courseRoutes);
 app.use("/api", employerRoutes);
 
 module.exports = app;

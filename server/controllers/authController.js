@@ -817,7 +817,6 @@ module.exports.registerEmployer = async (req, res, next) => {
     }
 
     // ---------- Create User (role: employer) ----------
-    // Note: userType is required in your schema — use a placeholder or make it optional for employers
     const user = await User.create({
       fullName: contactPerson.trim(),
       email: normalizedEmail,
@@ -840,9 +839,9 @@ module.exports.registerEmployer = async (req, res, next) => {
         mobile: phone.trim(),
         website: website?.trim() || "",
         companyType: companyType || "Private",
-        industry: industry.trim() || "Information Technology",
+        industry: industry?.trim() || "Information Technology",
         headquarters: {
-          city: location.trim(),
+          city: location?.trim() || "",
           state: "",
           country: "India",
         },

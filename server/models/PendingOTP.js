@@ -8,6 +8,7 @@ const pendingOTPSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true,
     },
     otp: {
       type: String,
@@ -16,14 +17,25 @@ const pendingOTPSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       required: true,
-      expires: 600, // MongoDB TTL index 10 mins
     },
     isVerified: {
       type: Boolean,
       default: false,
     },
+    purpose: {
+      type: String,
+      default: "verification",
+    },
+    tempData: {
+      fullName: String,
+      phone: String,
+      password: String,
+    },
   },
   { timestamps: true }
 );
+
+// Auto delete after expire
+pendingOTPSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model("PendingOTP", pendingOTPSchema);

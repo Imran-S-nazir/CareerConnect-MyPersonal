@@ -217,7 +217,7 @@ const EmployerRegister = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex">
-      {/* LEFT PANEL - Matching Screenshot */}
+      {/* LEFT PANEL */}
       <div className="hidden lg:flex w-[42%] bg-gradient-to-br from-[#92400e] via-[#b45309] to-[#78350f] text-white p-12 flex-col justify-between relative overflow-hidden sticky top-0 h-screen">
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#fbbf24]/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-56 h-56 bg-white/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
@@ -295,7 +295,7 @@ const EmployerRegister = () => {
           </div>
 
           {error && (
-            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 max-w-md mx-auto">
               {error}
             </div>
           )}
@@ -460,9 +460,13 @@ const EmployerRegister = () => {
                 <div>
                   <input
                     type="text"
+                    inputMode="numeric"
                     maxLength={6}
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) => {
+                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      setOtpError("");
+                    }}
                     placeholder="Enter 6-digit OTP"
                     className="w-full h-12 text-center text-lg font-bold tracking-[6px] rounded-xl border border-slate-200 bg-white outline-none focus:border-[#f59e0b] focus:ring-4 focus:ring-[#f59e0b]/15"
                   />
@@ -572,6 +576,9 @@ const EmployerRegister = () => {
                       <option value="Educational Institution">Educational</option>
                       <option value="Other">Other</option>
                     </select>
+                    {fieldErrors.companyType && (
+                      <p className="text-xs text-red-500 mt-1">{fieldErrors.companyType}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
@@ -608,7 +615,7 @@ const EmployerRegister = () => {
 
                 <div>
                   <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
-                    Website (Optional)
+                    Website <span className="text-slate-400 font-normal">(Optional)</span>
                   </label>
                   <input
                     name="website"

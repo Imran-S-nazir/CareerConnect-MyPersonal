@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import EmployerRegister from "./pages/auth/EmployerRegister";
+import ForgotPassword from "./pages/auth/ForgotPassword.jsx";
 
 // Components & Route Protectors
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -40,15 +41,16 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register/student" element={<Signup />} />
         <Route path="/register/employer" element={<EmployerRegister />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/select-role" element={<SelectRole />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/companies/:companyId" element={<CompanyPublicProfile />} />
 
         {/* ============================= */}
         {/* BASE PROTECTED ROUTES         */}
         {/* ============================= */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/home" element={<Home />} />
-        </Route>
+        {/* <Route element={<ProtectedRoute />}>
+        </Route> */}
 
         {/* ============================= */}
         {/* ROLE PROTECTED: STUDENT       */}
