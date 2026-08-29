@@ -2,7 +2,7 @@ import api from "../api/api";
 
 // Applications
 export const getEmployerApplications = async (params = {}) => {
-  const res = await api.get("/applications/employer", { params });
+  const res = await api.get("/applications/employer/list", { params });
   return res.data;
 };
 

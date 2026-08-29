@@ -13,7 +13,11 @@ router.post("/:id/submit", assessmentController.submitAssessment);
 // Employer management
 router.get("/", requireEmployer, assessmentController.getAssessments);
 router.post("/", requireEmployer, assessmentController.createAssessment);
-router.get("/:id/results", requireEmployer, assessmentController.getAssessmentResults);
+router.get(
+  "/:id/results",
+  requireEmployer,
+  assessmentController.getAssessmentResults,
+);
 router.delete("/:id", requireEmployer, assessmentController.deleteAssessment);
 
 module.exports = router;

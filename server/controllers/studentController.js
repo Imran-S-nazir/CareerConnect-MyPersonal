@@ -3,6 +3,7 @@ const StudentProfile = require("../models/StudentProfile");
 const Job = require("../models/Job");
 const Application = require("../models/Application");
 const Course = require("../models/Course");
+const { isEligibleForInternship } = require("../utils/eligibility");
 
 // Skill benchmarks for target roles for Skill Gap Analysis
 const ROLE_SKILL_BENCHMARKS = {
@@ -153,7 +154,11 @@ module.exports.getStudentDashboard = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    const recommendedInternships = dbInternships.map((job) => {
+    const eligibleDbInternships = dbInternships.filter((job) =>
+      isEligibleForInternship(job, profile)
+    );
+
+    const recommendedInternships = eligibleDbInternships.map((job) => {
       const stipendStr =
         job.salaryRange?.min > 0
           ? `₹${job.salaryRange.min.toLocaleString()} / month`

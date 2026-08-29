@@ -5,7 +5,10 @@ const protect = require("../middleware/authMiddleware");
 const { requireUserType } = require("../middleware/roleMiddleware");
 
 // Public route for recruiter / public preview
-router.get("/public/:usernameOrId", professionalController.getPublicProfessionalProfile);
+router.get(
+  "/public/:usernameOrId",
+  professionalController.getPublicProfessionalProfile,
+);
 
 // Authenticated Professional-only routes
 router.use(protect);
@@ -22,6 +25,9 @@ router.put("/me", professionalController.updateProfessionalProfile);
 
 // Dashboard & Career Recommendations
 router.get("/dashboard", professionalController.getProfessionalDashboard);
-router.get("/recommendations", professionalController.getProfessionalRecommendations);
+router.get(
+  "/recommendations",
+  professionalController.getProfessionalRecommendations,
+);
 
 module.exports = router;
