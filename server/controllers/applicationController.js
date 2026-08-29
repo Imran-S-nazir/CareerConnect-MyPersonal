@@ -15,7 +15,40 @@ const getEmployerProfileId = async (user) => {
   return profile._id;
 };
 
-// GET /api/applications (Employer gets applications for their jobs)
+// GET /api/applications/my (Candidate gets all their submitted applications with live statuses)
+exports.getMyApplications = async (req, res, next) => {
+  try {
+    const candidateId = req.user._id;
+    const applications = await Application.find({ candidateId })
+      .populate({
+        path: "jobId",
+        select: "title department location employmentType workMode salaryRange deadline status",
+        populate: { path: "employerId", select: "companyName logo" },
+      })
+      .populate("employerId", "companyName logo")
+      .sort({ createdAt: -1 });
+
+    const stats = {
+      applied: applications.filter((a) => a.status === "Applied").length,
+      underReview: applications.filter((a) => ["Screening", "Under Review"].includes(a.status)).length,
+      shortlisted: applications.filter((a) => a.status === "Shortlisted").length,
+      interview: applications.filter((a) => ["Interview", "Final Interview"].includes(a.status)).length,
+      selected: applications.filter((a) => ["Offer", "Hired"].includes(a.status)).length,
+      rejected: applications.filter((a) => a.status === "Rejected").length,
+    };
+
+    return res.status(200).json({
+      success: true,
+      count: applications.length,
+      stats,
+      applications,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/applications/employer (Employer gets applications for their jobs)
 exports.getEmployerApplications = async (req, res, next) => {
   try {
     const employerId = await getEmployerProfileId(req.user);
@@ -26,7 +59,7 @@ exports.getEmployerApplications = async (req, res, next) => {
     if (status && status !== "All") query.status = status;
 
     const applications = await Application.find(query)
-      .populate("jobId", "title department location employmentType")
+      .populate("jobId", "title department location employmentType workMode")
       .populate("candidateId", "fullName email phone profileImage userType")
       .sort({ createdAt: -1 });
 
@@ -43,25 +76,38 @@ exports.getEmployerApplications = async (req, res, next) => {
 // POST /api/applications/apply (Candidate applies to a job)
 exports.applyToJob = async (req, res, next) => {
   try {
-    const { jobId, resumeUrl, coverLetter } = req.body;
+    const { jobId, opportunityId, resumeUrl, coverLetter } = req.body;
+    const targetJobId = jobId || opportunityId;
     const candidateId = req.user._id;
 
-    const job = await Job.findById(jobId);
+    if (!targetJobId) {
+      return res.status(400).json({ success: false, message: "Job ID is required" });
+    }
+
+    const job = await Job.findById(targetJobId).populate("employerId");
     if (!job) {
       return res.status(404).json({ success: false, message: "Job not found" });
     }
 
-    const existing = await Application.findOne({ jobId, candidateId });
+    if (job.status !== "Published") {
+      return res.status(400).json({ success: false, message: "This position is no longer accepting applications" });
+    }
+
+    if (job.deadline && new Date(job.deadline) < new Date()) {
+      return res.status(400).json({ success: false, message: "Application deadline has passed" });
+    }
+
+    const existing = await Application.findOne({ jobId: targetJobId, candidateId });
     if (existing) {
       return res.status(409).json({
         success: false,
-        message: "You have already applied for this position",
+        message: "Application already submitted for this opportunity",
       });
     }
 
     // Calculate match score
     const studentProf = await StudentProfile.findOne({ userId: candidateId }).lean();
-    const candidateSkills = studentProf?.skills?.map((s) => (typeof s === "string" ? s : s.name)) || [];
+    const candidateSkills = studentProf?.technicalSkills || studentProf?.skills?.map((s) => (typeof s === "string" ? s : s.name)) || [];
     
     const strongSkills = candidateSkills.filter((s) =>
       (job.requiredSkills || []).some((reqS) => reqS.toLowerCase() === s.toLowerCase())
@@ -73,10 +119,10 @@ exports.applyToJob = async (req, res, next) => {
     const matchOverall = Math.min(100, Math.max(40, Math.round(50 + (strongSkills.length * 15))));
 
     const application = await Application.create({
-      jobId,
+      jobId: targetJobId,
       candidateId,
-      employerId: job.employerId,
-      resumeUrl: resumeUrl || "",
+      employerId: job.employerId?._id || job.employerId,
+      resumeUrl: resumeUrl || studentProf?.resume?.resumeUrl || "",
       coverLetter: coverLetter || "",
       status: "Applied",
       stageHistory: [
@@ -103,10 +149,22 @@ exports.applyToJob = async (req, res, next) => {
     job.applicantsCount += 1;
     await job.save();
 
+    const companyName = job.employerId?.companyName || "Employer";
+
     return res.status(201).json({
       success: true,
-      message: "Application submitted successfully",
-      application,
+      message: `Application submitted successfully for "${job.title}" at ${companyName}!`,
+      application: {
+        _id: application._id,
+        id: application._id,
+        jobId: job._id,
+        title: job.title,
+        company: companyName,
+        type: job.employmentType,
+        appliedDate: "Today",
+        status: "Applied",
+        createdAt: application.createdAt,
+      },
     });
   } catch (error) {
     next(error);
@@ -144,7 +202,7 @@ exports.updateApplicationStage = async (req, res, next) => {
   }
 };
 
-// POST /api/applications/:id/note (Add recruiter internal note)
+// POST /api/applications/:id/notes (Add recruiter internal note)
 exports.addApplicationNote = async (req, res, next) => {
   try {
     const { note } = req.body;

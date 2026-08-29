@@ -4,7 +4,8 @@ const applicationController = require("../controllers/applicationController");
 const protect = require("../middleware/authMiddleware");
 const { requireEmployer } = require("../middleware/roleMiddleware");
 
-// Candidate apply
+// Candidate applications
+router.get("/my", protect, applicationController.getMyApplications);
 router.post("/apply", protect, applicationController.applyToJob);
 
 // Employer ATS actions

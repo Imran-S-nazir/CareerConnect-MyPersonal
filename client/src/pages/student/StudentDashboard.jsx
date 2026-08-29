@@ -109,11 +109,19 @@ const StudentDashboard = () => {
     }
   };
 
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   // Handle Quick Apply
   const handleApply = async (item) => {
     try {
       const res = await applyOpportunity({
-        opportunityId: item.id,
+        opportunityId: item._id || item.id,
+        jobId: item._id || item.id,
         title: item.title,
         company: item.company,
         type: item.type,
@@ -121,7 +129,7 @@ const StudentDashboard = () => {
 
       if (res?.success && res?.application) {
         setApplicationsData((prev) => {
-          if (!prev) return prev;
+          if (!prev) return { stats: { applied: 1 }, recent: [res.application] };
           return {
             stats: {
               ...prev.stats,
@@ -130,10 +138,11 @@ const StudentDashboard = () => {
             recent: [res.application, ...(prev.recent || [])],
           };
         });
-        alert(`Application submitted successfully for "${item.title}" at ${item.company}!`);
+        showToast(res.message || `Application submitted for "${item.title}"!`, "success");
       }
     } catch (err) {
-      alert("Application could not be submitted. Please try again.");
+      const errMsg = err.response?.data?.message || err.message || "Application could not be submitted. Please try again.";
+      showToast(errMsg, "error");
     }
   };
 
@@ -412,6 +421,20 @@ const StudentDashboard = () => {
           )}
         </main>
       </div>
+
+      {/* Floating Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl text-xs font-bold shadow-2xl flex items-center gap-2.5 animate-slide-in-right ${
+            toast.type === "error"
+              ? "bg-rose-900 text-white border border-rose-700"
+              : "bg-slate-900 text-white border border-slate-700"
+          }`}
+        >
+          <span>{toast.type === "error" ? "⚠️" : "✓"}</span>
+          <span>{toast.message}</span>
+        </div>
+      )}
     </div>
   );
 };

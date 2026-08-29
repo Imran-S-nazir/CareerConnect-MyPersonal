@@ -1,5 +1,7 @@
 const User = require("../models/User");
 const FresherProfile = require("../models/FresherProfile");
+const Job = require("../models/Job");
+const Application = require("../models/Application");
 
 // Skill benchmarks for target roles for Job Matching & Skill Gap Analysis
 const ROLE_SKILL_BENCHMARKS = {
@@ -398,121 +400,107 @@ module.exports.getFresherDashboard = async (req, res, next) => {
     const completion = calculateFresherProfileCompletion(profile, req.user);
     const readiness = calculateFresherJobReadiness(profile, completion);
 
-    // Curated entry-level job listings tailored for freshers
-    const rawJobs = [
-      {
-        id: "fjob-101",
-        title: "Associate Software Engineer (2024 / 2025 Batch)",
-        company: "NexGen Cloud Labs",
-        location: "Bangalore (Hybrid)",
-        salary: "₹6.5 - 9.0 LPA",
-        type: "Full-Time",
-        workMode: "Hybrid",
-        experienceRequired: "Fresher / 0-1 Yr",
-        skillsRequired: ["JavaScript", "React", "Node.js", "Git"],
-        postedAt: "Just now",
-        deadline: "05 Sep 2026",
-      },
-      {
-        id: "fjob-102",
-        title: "Junior Full Stack Developer (MERN)",
-        company: "InnovateX Solutions",
-        location: "Remote / Pune",
-        salary: "₹5.5 - 8.0 LPA",
-        type: "Full-Time",
-        workMode: "Remote",
-        experienceRequired: "Fresher",
-        skillsRequired: ["React", "Node.js", "Express", "MongoDB"],
-        postedAt: "1 day ago",
-        deadline: "10 Sep 2026",
-      },
-      {
-        id: "fjob-103",
-        title: "Graduate Engineer Trainee (GET)",
-        company: "Cognitive Technologies",
-        location: "Hyderabad",
-        salary: "₹7.0 - 10.5 LPA",
-        type: "Graduate Trainee",
-        workMode: "On-site",
-        experienceRequired: "Fresher",
-        skillsRequired: ["Python", "SQL", "Data Structures", "OOP"],
-        postedAt: "2 days ago",
-        deadline: "12 Sep 2026",
-      },
-      {
-        id: "fjob-104",
-        title: "Junior Frontend Engineer",
-        company: "ScaleFlow Systems",
-        location: "Gurgaon / Delhi NCR",
-        salary: "₹5.0 - 7.5 LPA",
-        type: "Full-Time",
-        workMode: "Hybrid",
-        experienceRequired: "Fresher / 0-1 Yr",
-        skillsRequired: ["JavaScript", "HTML", "CSS", "React", "Tailwind CSS"],
-        postedAt: "3 days ago",
-        deadline: "15 Sep 2026",
-      },
-    ];
+    // Fetch Real Database Jobs for Freshers
+    const dbJobs = await Job.find({
+      status: "Published",
+      employmentType: { $ne: "Internship" },
+    })
+      .populate("employerId", "companyName logo headquarters")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // Compute dynamic match percentages for each job
-    const recommendedJobs = rawJobs.map((job) => ({
-      ...job,
-      matchPercentage: calculateJobMatch(profile, job.skillsRequired, job.title),
+    const recommendedJobs = dbJobs.map((job) => {
+      const salaryStr =
+        job.salaryRange?.min > 0
+          ? `₹${(job.salaryRange.min / 100000).toFixed(1)} - ${(job.salaryRange.max / 100000).toFixed(1)} LPA`
+          : "Competitive LPA";
+
+      return {
+        _id: job._id,
+        id: job._id.toString(),
+        jobId: job._id.toString(),
+        title: job.title,
+        company: job.employerId?.companyName || "Partner Employer",
+        location: job.location,
+        salary: salaryStr,
+        type: job.employmentType || "Full-Time",
+        workMode: job.workMode || "Hybrid",
+        experienceRequired: job.experience?.level || "Fresher / 0-1 Yr",
+        skillsRequired: job.requiredSkills || [],
+        postedAt: "Active",
+        deadline: job.deadline ? new Date(job.deadline).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "Open",
+        matchPercentage: calculateJobMatch(profile, job.requiredSkills || [], job.title),
+      };
+    });
+
+    // Fetch Real Database Internships
+    const dbInternships = await Job.find({
+      status: "Published",
+      employmentType: "Internship",
+    })
+      .populate("employerId", "companyName logo headquarters")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const recommendedInternships = dbInternships.map((job) => {
+      const stipendStr =
+        job.salaryRange?.min > 0
+          ? `₹${job.salaryRange.min.toLocaleString()} / month`
+          : "Competitive Stipend";
+
+      return {
+        _id: job._id,
+        id: job._id.toString(),
+        jobId: job._id.toString(),
+        title: job.title,
+        company: job.employerId?.companyName || "Partner Employer",
+        location: job.location,
+        stipend: stipendStr,
+        duration: "3-6 Months",
+        type: "Internship",
+        workMode: job.workMode || "Remote",
+        skillsRequired: job.requiredSkills || [],
+        deadline: job.deadline ? new Date(job.deadline).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "Open",
+      };
+    });
+
+    // Fetch Real Applications for fresher
+    const dbApplications = await Application.find({ candidateId: userId })
+      .populate({
+        path: "jobId",
+        select: "title department location employmentType workMode salaryRange deadline status",
+        populate: { path: "employerId", select: "companyName logo" },
+      })
+      .populate("employerId", "companyName logo")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const appStats = {
+      applied: dbApplications.filter((a) => a.status === "Applied").length,
+      underReview: dbApplications.filter((a) => ["Screening", "Under Review"].includes(a.status)).length,
+      shortlisted: dbApplications.filter((a) => a.status === "Shortlisted").length,
+      interview: dbApplications.filter((a) => ["Interview", "Final Interview", "Assessment"].includes(a.status)).length,
+      selected: dbApplications.filter((a) => ["Offer", "Hired"].includes(a.status)).length,
+      rejected: dbApplications.filter((a) => a.status === "Rejected").length,
+    };
+
+    const recentApps = dbApplications.map((app) => ({
+      _id: app._id,
+      id: app._id.toString(),
+      jobId: app.jobId?._id || "",
+      title: app.jobId?.title || "Position",
+      company: app.jobId?.employerId?.companyName || app.employerId?.companyName || "Employer",
+      appliedDate: new Date(app.createdAt).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      status: app.status,
     }));
 
-    // Curated Intern-to-Hire & Apprenticeships for Freshers
-    const recommendedInternships = [
-      {
-        id: "fint-201",
-        title: "Full Stack Engineer (Intern to Full-Time)",
-        company: "GrowthStack Labs",
-        location: "Remote",
-        stipend: "₹30,000 / month (Converts to ₹8 LPA)",
-        duration: "3 Months",
-        type: "Internship",
-        workMode: "Remote",
-        skillsRequired: ["React", "Node.js", "MongoDB"],
-        deadline: "31 Aug 2026",
-      },
-      {
-        id: "fint-202",
-        title: "Backend Development Apprenticeship",
-        company: "RazorFlow Tech",
-        location: "Bangalore",
-        stipend: "₹28,000 / month",
-        duration: "6 Months",
-        type: "Apprenticeship",
-        workMode: "Hybrid",
-        skillsRequired: ["Node.js", "Express", "SQL", "Git"],
-        deadline: "04 Sep 2026",
-      },
-    ];
-
-    // Application statistics
     const applications = {
-      stats: {
-        applied: 6,
-        underReview: 3,
-        shortlisted: 2,
-        interview: 1,
-        selected: 0,
-      },
-      recent: [
-        {
-          id: "app-f1",
-          title: "Associate Software Engineer",
-          company: "NexGen Cloud Labs",
-          appliedDate: "25 Aug 2026",
-          status: "Under Review",
-        },
-        {
-          id: "app-f2",
-          title: "Junior Full Stack Developer",
-          company: "InnovateX Solutions",
-          appliedDate: "22 Aug 2026",
-          status: "Shortlisted 🎉",
-        },
-      ],
+      stats: appStats,
+      recent: recentApps,
     };
 
     return res.status(200).json({
