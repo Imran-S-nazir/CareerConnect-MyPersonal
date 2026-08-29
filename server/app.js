@@ -3,6 +3,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const authRoutes = require("./routes/authRoutes.js");
 const studentRoutes = require("./routes/studentRoutes.js");
+const courseRoutes = require("./routes/courseRoutes.js");
 const app = express();
 
 // Middlewares
@@ -42,5 +43,6 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/profile/student", studentRoutes);
+app.use("/api/courses", courseRoutes);
 
 module.exports = app;
