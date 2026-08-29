@@ -9,8 +9,9 @@ const professionalRoutes = require("./routes/professionalRoutes.js");
 const employerRoutes = require("./routes/employerRoutes.js");
 const courseRoutes = require("./routes/courseRoutes.js");
 
-// Employer feature routes
+// Employer & Jobs / Internships feature routes
 const jobRoutes = require("./routes/jobRoutes.js");
+const internshipRoutes = require("./routes/internshipRoutes.js");
 const applicationRoutes = require("./routes/applicationRoutes.js");
 const candidateRoutes = require("./routes/candidateRoutes.js");
 const assessmentRoutes = require("./routes/assessmentRoutes.js");
@@ -66,13 +67,16 @@ app.use("/api/profile/professional", professionalRoutes);
 // Core LMS Course Routes
 app.use("/api/courses", courseRoutes);
 
+// Marketplace & Discovery Routes
+app.use("/api/jobs", jobRoutes);
+app.use("/api/internships", internshipRoutes);
+app.use("/api/applications", applicationRoutes);
+app.use("/api/candidates", candidateRoutes);
+
 // Employer Hub Routes
 app.use("/api/employer", employerRoutes);
 app.use("/api/employer/learning", employerLearningRoutes);
 app.use("/api/employer/analytics", employerAnalyticsRoutes);
-app.use("/api/jobs", jobRoutes);
-app.use("/api/applications", applicationRoutes);
-app.use("/api/candidates", candidateRoutes);
 app.use("/api/assessments", assessmentRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/offers", offerRoutes);

@@ -10,9 +10,10 @@ import ForgotPassword from "./pages/auth/ForgotPassword.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
 
-// General Pages
+// General & Discovery Pages
 import SelectRole from "./pages/SelectRole";
 import Home from "./pages/Home.jsx";
+import InternshipDiscoveryPage from "./pages/internships/InternshipDiscoveryPage";
 
 // Student Pages
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -36,7 +37,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* ============================= */}
-        {/* PUBLIC ROUTES                 */}
+        {/* PUBLIC & DISCOVERY ROUTES     */}
         {/* ============================= */}
         <Route path="/login" element={<Login />} />
         <Route path="/register/student" element={<Signup />} />
@@ -46,11 +47,15 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/companies/:companyId" element={<CompanyPublicProfile />} />
 
-        {/* ============================= */}
-        {/* BASE PROTECTED ROUTES         */}
-        {/* ============================= */}
-        {/* <Route element={<ProtectedRoute />}>
-        </Route> */}
+        {/* Category-Based Internship Discovery Routes */}
+        <Route path="/internships" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/work-from-home" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/international" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/latest" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/paid" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/with-job-offer" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/in/:city" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/category/:category" element={<InternshipDiscoveryPage />} />
 
         {/* ============================= */}
         {/* ROLE PROTECTED: STUDENT       */}

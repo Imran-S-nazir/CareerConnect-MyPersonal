@@ -20,6 +20,17 @@ const jobSchema = new mongoose.Schema(
       trim: true,
       maxlength: 150,
     },
+    category: {
+      type: String,
+      trim: true,
+      default: "Web Development",
+      index: true,
+    },
+    subCategory: {
+      type: String,
+      trim: true,
+      default: "Full Stack Development",
+    },
     department: {
       type: String,
       trim: true,
@@ -27,18 +38,57 @@ const jobSchema = new mongoose.Schema(
     },
     employmentType: {
       type: String,
-      enum: ["Full-time", "Part-time", "Contract", "Internship"],
+      enum: ["Full-time", "Part-time", "Contract", "Internship", "Freelance"],
       default: "Full-time",
+      index: true,
     },
     workMode: {
       type: String,
       enum: ["On-site", "Hybrid", "Remote"],
       default: "Hybrid",
+      index: true,
     },
     location: {
       type: String,
       required: [true, "Job location is required"],
       trim: true,
+    },
+    city: {
+      type: String,
+      trim: true,
+      default: "Bangalore",
+      index: true,
+    },
+    state: {
+      type: String,
+      trim: true,
+      default: "Karnataka",
+    },
+    country: {
+      type: String,
+      trim: true,
+      default: "India",
+      index: true,
+    },
+    isInternational: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    isPaid: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    hasJobOffer: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     salaryRange: {
       min: { type: Number, default: 0 },
@@ -111,6 +161,10 @@ const jobSchema = new mongoose.Schema(
 );
 
 jobSchema.index({ employerId: 1, status: 1 });
+jobSchema.index({ category: 1, status: 1 });
+jobSchema.index({ city: 1, status: 1 });
+jobSchema.index({ workMode: 1, status: 1 });
+jobSchema.index({ employmentType: 1, status: 1 });
 jobSchema.index({ requiredSkills: 1 });
 
 module.exports = mongoose.model("Job", jobSchema);
