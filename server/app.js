@@ -9,6 +9,17 @@ const professionalRoutes = require("./routes/professionalRoutes.js");
 const employerRoutes = require("./routes/employerRoutes.js");
 const courseRoutes = require("./routes/courseRoutes.js");
 
+// Employer feature routes
+const jobRoutes = require("./routes/jobRoutes.js");
+const applicationRoutes = require("./routes/applicationRoutes.js");
+const candidateRoutes = require("./routes/candidateRoutes.js");
+const assessmentRoutes = require("./routes/assessmentRoutes.js");
+const interviewRoutes = require("./routes/interviewRoutes.js");
+const offerRoutes = require("./routes/offerRoutes.js");
+const organizationRoutes = require("./routes/organizationRoutes.js");
+const employerLearningRoutes = require("./routes/employerLearningRoutes.js");
+const employerAnalyticsRoutes = require("./routes/employerAnalyticsRoutes.js");
+
 const app = express();
 
 // Middlewares
@@ -43,7 +54,7 @@ app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 app.use(cookieParser());
 
-// Routes
+// Base & User Profile Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/profile/student", studentRoutes);
@@ -51,8 +62,31 @@ app.use("/api/fresher", fresherRoutes);
 app.use("/api/profile/fresher", fresherRoutes);
 app.use("/api/professional", professionalRoutes);
 app.use("/api/profile/professional", professionalRoutes);
-app.use("/api/employer", employerRoutes);
+
+// Core LMS Course Routes
 app.use("/api/courses", courseRoutes);
+
+// Employer Hub Routes
+app.use("/api/employer", employerRoutes);
+app.use("/api/employer/learning", employerLearningRoutes);
+app.use("/api/employer/analytics", employerAnalyticsRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/applications", applicationRoutes);
+app.use("/api/candidates", candidateRoutes);
+app.use("/api/assessments", assessmentRoutes);
+app.use("/api/interviews", interviewRoutes);
+app.use("/api/offers", offerRoutes);
+app.use("/api/organization", organizationRoutes);
 app.use("/api", employerRoutes);
+
+// Global error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Server Global Error:", err);
+  const status = err.statusCode || err.status || 500;
+  return res.status(status).json({
+    success: false,
+    message: err.message || "Internal server error",
+  });
+});
 
 module.exports = app;

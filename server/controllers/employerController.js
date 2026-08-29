@@ -134,10 +134,14 @@ exports.getEmployerProfile = async (req, res, next) => {
 exports.updateEmployerProfile = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const updateData = req.body;
+    const updateData = { ...req.body };
 
-    // Do not allow changing userId from payload
+    // Prevent modifying system / immutable fields
     delete updateData.userId;
+    delete updateData._id;
+    delete updateData.__v;
+    delete updateData.createdAt;
+    delete updateData.updatedAt;
 
     let profile = await EmployerProfile.findOne({ userId });
 
@@ -147,7 +151,9 @@ exports.updateEmployerProfile = async (req, res, next) => {
         ...updateData,
       });
     } else {
-      Object.assign(profile, updateData);
+      Object.keys(updateData).forEach((key) => {
+        profile[key] = updateData[key];
+      });
     }
 
     // Dynamic completion score
@@ -171,7 +177,11 @@ exports.updateEmployerProfile = async (req, res, next) => {
       profileCompletion: completion,
     });
   } catch (error) {
-    next(error);
+    console.error("updateEmployerProfile Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update employer profile",
+    });
   }
 };
 
@@ -182,9 +192,13 @@ exports.updateEmployerProfile = async (req, res, next) => {
 exports.saveDraftEmployerProfile = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const draftData = req.body;
+    const draftData = { ...req.body };
 
     delete draftData.userId;
+    delete draftData._id;
+    delete draftData.__v;
+    delete draftData.createdAt;
+    delete draftData.updatedAt;
 
     let profile = await EmployerProfile.findOne({ userId });
 
@@ -197,7 +211,9 @@ exports.saveDraftEmployerProfile = async (req, res, next) => {
         ...draftData,
       });
     } else {
-      Object.assign(profile, draftData);
+      Object.keys(draftData).forEach((key) => {
+        profile[key] = draftData[key];
+      });
     }
 
     const completion = calculateEmployerCompletion(profile, req.user);
@@ -212,7 +228,11 @@ exports.saveDraftEmployerProfile = async (req, res, next) => {
       profileCompletion: completion,
     });
   } catch (error) {
-    next(error);
+    console.error("saveDraftEmployerProfile Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to save draft",
+    });
   }
 };
 
