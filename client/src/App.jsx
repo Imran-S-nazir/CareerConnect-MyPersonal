@@ -36,6 +36,11 @@ import PostInternship from "./pages/employer/PostInternship";
 import MyInternships from "./pages/employer/MyInternships";
 import EditInternship from "./pages/employer/EditInternship";
 
+// =============================
+// RESUME BUILDER (new)
+// =============================
+import ResumeBuilder from "./pages/resume/ResumeBuilder";
+
 function App() {
   return (
     <BrowserRouter>
@@ -90,6 +95,8 @@ function App() {
           <Route path="/employer/internships/new" element={<PostInternship />} />
           <Route path="/employer/internships/:id/edit" element={<EditInternship />} />
         </Route>
+
+        <Route path="/resume-builder" element={<ResumeBuilder />} />
 
         {/* ========== DEFAULT ========== */}
         <Route path="/" element={<Navigate to="/home" replace />} />
