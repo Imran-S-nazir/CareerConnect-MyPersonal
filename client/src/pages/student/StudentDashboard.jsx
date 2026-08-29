@@ -28,6 +28,9 @@ import ApplicationTrackerCard from "../../components/student-dashboard/Applicati
 import SavedOpportunitiesCard from "../../components/student-dashboard/SavedOpportunitiesCard";
 import UpcomingDeadlinesCard from "../../components/student-dashboard/UpcomingDeadlinesCard";
 import CareerGoalCard from "../../components/student-dashboard/CareerGoalCard";
+import Internships from "./Internships";
+import InternshipDetail from "./InternshipDetail";
+import MyApplications from "./MyApplications";
 import QuickActionsCard from "../../components/student-dashboard/QuickActionsCard";
 
 const StudentDashboard = () => {
@@ -38,6 +41,10 @@ const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Internship sub-views
+  const [internshipView, setInternshipView] = useState("list"); // "list", "detail"
+  const [selectedInternshipId, setSelectedInternshipId] = useState(null);
 
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -234,7 +241,12 @@ const StudentDashboard = () => {
       {/* Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onSelectTab={(tab) => {
+          setActiveTab(tab);
+          if (tab === "internships") {
+            setInternshipView("list");
+          }
+        }}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
         onLogout={handleLogout}
@@ -363,12 +375,23 @@ const StudentDashboard = () => {
           )}
 
           {activeTab === "internships" && (
-            <InternshipRecommendationsCard
-              internships={filteredInternships}
-              onSave={handleSaveToggle}
-              onApply={handleApply}
-              savedIds={savedIds}
-            />
+            <div className="space-y-5 animate-fade-in bg-white border border-slate-200 rounded-3xl p-6 shadow-xs">
+              {internshipView === "list" && (
+                <Internships
+                  studentProfile={profile}
+                  onSelectInternship={(id) => {
+                    setSelectedInternshipId(id);
+                    setInternshipView("detail");
+                  }}
+                />
+              )}
+              {internshipView === "detail" && (
+                <InternshipDetail
+                  id={selectedInternshipId}
+                  onBack={() => setInternshipView("list")}
+                />
+              )}
+            </div>
           )}
 
           {activeTab === "jobs" && (
@@ -385,7 +408,9 @@ const StudentDashboard = () => {
           )}
 
           {activeTab === "applications" && (
-            <ApplicationTrackerCard applications={applicationsData} />
+            <div className="space-y-5 animate-fade-in bg-white border border-slate-200 rounded-3xl p-6 shadow-xs">
+              <MyApplications />
+            </div>
           )}
 
           {activeTab === "saved" && (

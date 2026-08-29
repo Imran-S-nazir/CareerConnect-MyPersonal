@@ -20,6 +20,9 @@ const organizationRoutes = require("./routes/organizationRoutes.js");
 const employerLearningRoutes = require("./routes/employerLearningRoutes.js");
 const employerAnalyticsRoutes = require("./routes/employerAnalyticsRoutes.js");
 
+
+const internshipRoutes = require("./routes/internshipRoutes.js");
+
 const app = express();
 
 // Middlewares
@@ -77,6 +80,8 @@ app.use("/api/assessments", assessmentRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/offers", offerRoutes);
 app.use("/api/organization", organizationRoutes);
+app.use("/api/internships", internshipRoutes);
+app.use("/api/applications", applicationRoutes);
 app.use("/api", employerRoutes);
 
 // Global error handling middleware
