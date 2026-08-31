@@ -2,10 +2,9 @@ const User = require("../models/User.js");
 const StudentProfile = require("../models/StudentProfile.js");
 const jwt = require("jsonwebtoken");
 
-
 const crypto = require("crypto");
-const PendingOTP = require("../models/PendingOTP");
-const sendEmail = require("../utils/sendEmail");
+const PendingOTP = require("../models/PendingOTP.js");
+const sendEmail = require("../utils/sendEmail.js");
 
 const EmployerProfile = require("../models/EmployerProfile.js");
 
@@ -52,7 +51,7 @@ module.exports.sendOTP = async (req, res, next) => {
         expiresAt,
         isVerified: false,
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     console.log(`\n==================================================`);
@@ -160,10 +159,6 @@ module.exports.verifyOTP = async (req, res, next) => {
   }
 };
 
-
-
-
-
 // Generate JWT
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -183,7 +178,10 @@ const setTokenCookie = (res, token) => {
 
 // Helper: Generate username from email
 const generateUsername = (email) => {
-  const base = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+  const base = email
+    .split("@")[0]
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
   const random = Math.floor(1000 + Math.random() * 9000);
   return `${base}${random}`;
 };
@@ -270,7 +268,10 @@ module.exports.registerUser = async (req, res, next) => {
       });
     }
 
-    if (!userType || !["student", "fresher", "professional"].includes(userType)) {
+    if (
+      !userType ||
+      !["student", "fresher", "professional"].includes(userType)
+    ) {
       return res.status(400).json({
         success: false,
         field: "userType",
@@ -310,21 +311,24 @@ module.exports.registerUser = async (req, res, next) => {
       if (!college || !course || !year || !graduationYear) {
         return res.status(400).json({
           success: false,
-          message: "College, course, year and graduation year are required for students",
+          message:
+            "College, course, year and graduation year are required for students",
         });
       }
     } else if (userType === "fresher") {
       if (!highestQualification || !passoutYear) {
         return res.status(400).json({
           success: false,
-          message: "Highest qualification and passout year are required for freshers",
+          message:
+            "Highest qualification and passout year are required for freshers",
         });
       }
     } else if (userType === "professional") {
       if (!currentCompany || !jobTitle) {
         return res.status(400).json({
           success: false,
-          message: "Current company and job title are required for professionals",
+          message:
+            "Current company and job title are required for professionals",
         });
       }
     }
@@ -348,7 +352,10 @@ module.exports.registerUser = async (req, res, next) => {
           ],
         });
       } catch (profileErr) {
-        console.error("Error creating student profile during registration:", profileErr);
+        console.error(
+          "Error creating student profile during registration:",
+          profileErr,
+        );
       }
     }
 
@@ -510,7 +517,7 @@ module.exports.updateExperienceLevel = async (req, res, next) => {
       {
         userType: selectedType,
       },
-      { new: true }
+      { new: true },
     ).select("-password");
 
     if (!user) {
@@ -563,7 +570,6 @@ module.exports.checkEmail = async (req, res) => {
 
 // authController.js me add karo
 
-
 // PendingOTP model already use ho raha hoga register ke liye
 
 // ========== FORGOT PASSWORD - SEND OTP ==========
@@ -572,7 +578,9 @@ module.exports.forgotPassword = async (req, res, next) => {
     const { email } = req.body;
 
     if (!email?.trim()) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -597,7 +605,7 @@ module.exports.forgotPassword = async (req, res, next) => {
         isVerified: false,
         purpose: "reset-password",
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     console.log(`\n==================================================`);
@@ -638,7 +646,9 @@ module.exports.verifyResetOTP = async (req, res, next) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      return res.status(400).json({ success: false, message: "Email and OTP are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email and OTP are required" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -659,11 +669,16 @@ module.exports.verifyResetOTP = async (req, res, next) => {
     }
 
     if (!record) {
-      return res.status(400).json({ success: false, message: "No OTP found. Request a new one." });
+      return res
+        .status(400)
+        .json({ success: false, message: "No OTP found. Request a new one." });
     }
 
     if (record.expiresAt < new Date() && !isMasterDemoOtp) {
-      return res.status(400).json({ success: false, message: "OTP has expired. Request a new one." });
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Request a new one.",
+      });
     }
 
     const isValid = record.otp === enteredOtp || isMasterDemoOtp;
@@ -690,15 +705,22 @@ module.exports.resetPassword = async (req, res, next) => {
     const { email, otp, password, confirmPassword } = req.body;
 
     if (!email || !otp || !password) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
+      });
     }
 
     if (password !== confirmPassword) {
-      return res.status(400).json({ success: false, message: "Passwords do not match" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -716,9 +738,13 @@ module.exports.resetPassword = async (req, res, next) => {
       // For simplicity: require valid verified record
     }
 
-    const user = await User.findOne({ email: normalizedEmail }).select("+password");
+    const user = await User.findOne({ email: normalizedEmail }).select(
+      "+password",
+    );
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     user.password = password; // pre-save hook will hash
@@ -735,7 +761,6 @@ module.exports.resetPassword = async (req, res, next) => {
     next(error);
   }
 };
-
 
 module.exports.registerEmployer = async (req, res, next) => {
   try {

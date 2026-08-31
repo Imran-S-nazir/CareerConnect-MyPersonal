@@ -1,22 +1,63 @@
 import api from "../api/api";
 
 export const getInternships = async (params = {}) => {
-  const res = await api.get("/internships", { params });
-  return res.data;
+  const { data } = await api.get("/internships", { params });
+  return data;
 };
 
 export const getInternshipCategories = async () => {
-  const res = await api.get("/internships/categories");
-  return res.data;
+  const { data } = await api.get("/internships/categories");
+  return data;
 };
 
 export const getInternshipById = async (id) => {
-  const res = await api.get(`/internships/${id}`);
-  return res.data;
+  const { data } = await api.get(`/internships/${id}`);
+  return data;
 };
 
-export default {
+export const getById = getInternshipById;
+
+export const create = async (payload) => {
+  const { data } = await api.post("/internships", payload);
+  return data;
+};
+
+export const getMyPosts = async () => {
+  const { data } = await api.get("/internships", { params: { myPosts: true } });
+  return data;
+};
+
+export const update = async (id, payload) => {
+  const { data } = await api.put(`/internships/${id}`, payload);
+  return data;
+};
+
+export const updateStatus = async (id, status) => {
+  const { data } = await api.patch(`/internships/${id}/status`, { status });
+  return data;
+};
+
+export const remove = async (id) => {
+  const { data } = await api.delete(`/internships/${id}`);
+  return data;
+};
+
+export const syncExternal = async () => {
+  const { data } = await api.post("/internships/sync/external");
+  return data;
+};
+
+const internshipService = {
   getInternships,
   getInternshipCategories,
   getInternshipById,
+  getById,
+  create,
+  getMyPosts,
+  update,
+  updateStatus,
+  remove,
+  syncExternal,
 };
+
+export default internshipService;

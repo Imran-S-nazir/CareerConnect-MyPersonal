@@ -81,7 +81,6 @@ app.use("/api/assessments", assessmentRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/offers", offerRoutes);
 app.use("/api/organization", organizationRoutes);
-app.use("/api", employerRoutes);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {

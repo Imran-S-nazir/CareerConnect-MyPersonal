@@ -23,6 +23,9 @@ import AddEmployeeModal from "../../components/employer/AddEmployeeModal";
 import AssignTrainingModal from "../../components/employer/AssignTrainingModal";
 import SkillGapMatrix from "../../components/employer/SkillGapMatrix";
 import HiringAnalyticsChart from "../../components/employer/HiringAnalyticsChart";
+import MyInternships from "./MyInternships";
+import PostInternship from "./PostInternship";
+import EditInternship from "./EditInternship";
 import LearningAnalyticsChart from "../../components/employer/LearningAnalyticsChart";
 
 const EmployerDashboard = () => {
@@ -67,6 +70,10 @@ const EmployerDashboard = () => {
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
   const [isAssignTrainingModalOpen, setIsAssignTrainingModalOpen] = useState(false);
   const [preselectedCourseForTraining, setPreselectedCourseForTraining] = useState(null);
+
+  // Internship View States
+  const [internshipView, setInternshipView] = useState("list"); // "list", "new", "edit"
+  const [internshipIdToEdit, setInternshipIdToEdit] = useState(null);
 
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -471,16 +478,28 @@ const EmployerDashboard = () => {
                       <h3 className="text-sm font-bold text-slate-900">Active Job Listings</h3>
                       <p className="text-xs text-slate-400">Open roles visible to Geeta University talent</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setJobToEdit(null);
-                        setIsJobModalOpen(true);
-                      }}
-                      className="px-3.5 py-1.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold shadow-xs transition"
-                    >
-                      + Post Job
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab("internships");
+                          setInternshipView("new");
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-bold shadow-xs transition inline-flex items-center"
+                      >
+                        + Post Internship
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setJobToEdit(null);
+                          setIsJobModalOpen(true);
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold shadow-xs transition"
+                      >
+                        + Post Job
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-2.5">
@@ -543,7 +562,29 @@ const EmployerDashboard = () => {
                         }}
                         className="w-full p-2.5 rounded-xl border border-slate-200 hover:border-amber-300 hover:bg-amber-50/40 text-xs font-semibold text-slate-700 flex items-center justify-between transition"
                       >
-                        <span className="flex items-center gap-2"><span>➕</span> Post Opportunity</span>
+                        <span className="flex items-center gap-2"><span>➕</span> Post Job Listing</span>
+                        <span className="text-amber-600 font-bold">→</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab("internships");
+                          setInternshipView("new");
+                        }}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 hover:border-amber-300 hover:bg-amber-50/40 text-xs font-semibold text-slate-700 flex items-center justify-between transition"
+                      >
+                        <span className="flex items-center gap-2"><span>💼</span> Post Internship</span>
+                        <span className="text-amber-600 font-bold">→</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab("internships");
+                          setInternshipView("list");
+                        }}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 hover:border-amber-300 hover:bg-amber-50/40 text-xs font-semibold text-slate-700 flex items-center justify-between transition"
+                      >
+                        <span className="flex items-center gap-2"><span>📁</span> Manage Internships</span>
                         <span className="text-amber-600 font-bold">→</span>
                       </button>
                       <button
@@ -589,6 +630,36 @@ const EmployerDashboard = () => {
                 <HiringAnalyticsChart hiring={analyticsData?.hiring} />
                 <LearningAnalyticsChart learning={analyticsData?.learning} />
               </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* TAB: INTERNSHIP MANAGEMENT                               */}
+          {/* ======================================================== */}
+          {activeTab === "internships" && (
+            <div className="space-y-5 animate-fade-in bg-white border border-slate-200 rounded-3xl p-6 shadow-xs">
+              {internshipView === "list" && (
+                <MyInternships
+                  onPostClick={() => setInternshipView("new")}
+                  onEditClick={(id) => {
+                    setInternshipIdToEdit(id);
+                    setInternshipView("edit");
+                  }}
+                />
+              )}
+              {internshipView === "new" && (
+                <PostInternship
+                  onCancel={() => setInternshipView("list")}
+                  onSuccess={() => setInternshipView("list")}
+                />
+              )}
+              {internshipView === "edit" && (
+                <EditInternship
+                  id={internshipIdToEdit}
+                  onCancel={() => setInternshipView("list")}
+                  onSuccess={() => setInternshipView("list")}
+                />
+              )}
             </div>
           )}
 
