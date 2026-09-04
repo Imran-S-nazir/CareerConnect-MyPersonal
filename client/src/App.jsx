@@ -12,9 +12,10 @@ import SetPassword from "./pages/auth/SetPassword.jsx";
 // Guards
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
 
-// General
+// General & Discovery Pages
 import SelectRole from "./pages/SelectRole";
 import Home from "./pages/Home.jsx";
+import InternshipDiscoveryPage from "./pages/internships/InternshipDiscoveryPage";
 
 // Student
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -168,6 +169,73 @@ function App() {
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </AuthInitializer>
+      <Routes>
+        {/* ========== PUBLIC & DISCOVERY ROUTES ========== */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register/student" element={<Signup />} />
+        <Route path="/register/employer" element={<EmployerRegister />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/select-role" element={<SelectRole />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/companies/:companyId" element={<CompanyPublicProfile />} />
+
+        {/* Category-Based Internship Discovery Routes */}
+        <Route path="/internships" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/browse" element={<Internships />} />
+        <Route path="/internships/work-from-home" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/international" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/latest" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/paid" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/with-job-offer" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/in/:city" element={<InternshipDiscoveryPage />} />
+        <Route path="/internships/category/:category" element={<InternshipDiscoveryPage />} />
+
+        {/* ========== CANDIDATES: student + fresher + professional ========== */}
+        <Route
+          element={
+            <RoleProtectedRoute
+              allowedRoles={["student", "fresher", "professional"]}
+            />
+          }
+        >
+          <Route path="/internships/:id" element={<InternshipDetail />} />
+          <Route path="/applications" element={<MyApplications />} />
+        </Route>
+
+        {/* Student-only */}
+        <Route element={<RoleProtectedRoute allowedRoles={["student"]} />}>
+          <Route path="/student/dashboard" element={<StudentDashboard />} />
+          <Route path="/student/profile" element={<StudentProfile />} />
+        </Route>
+
+        {/* Fresher-only */}
+        <Route element={<RoleProtectedRoute allowedRoles={["fresher"]} />}>
+          <Route path="/fresher/dashboard" element={<FresherDashboard />} />
+          <Route path="/fresher/profile" element={<FresherProfile />} />
+        </Route>
+
+        {/* Professional-only */}
+        <Route element={<RoleProtectedRoute allowedRoles={["professional"]} />}>
+          <Route path="/professional/dashboard" element={<ProfessionalDashboard />} />
+          <Route path="/professional/profile" element={<ProfessionalProfile />} />
+        </Route>
+
+        {/* ========== EMPLOYER ========== */}
+        <Route element={<RoleProtectedRoute allowedRoles={["employer"]} />}>
+          <Route path="/employer/dashboard" element={<EmployerDashboard />} />
+          <Route path="/employer/profile" element={<EmployerProfile />} />
+          <Route path="/employer/company" element={<CompanyPublicProfile />} />
+          <Route path="/employer/internships" element={<MyInternships />} />
+          <Route path="/employer/internships/new" element={<PostInternship />} />
+          <Route path="/employer/internships/:id/edit" element={<EditInternship />} />
+        </Route>
+
+        <Route path="/resume-builder" element={<ResumeBuilder />} />
+
+        {/* ========== DEFAULT ========== */}
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 }
