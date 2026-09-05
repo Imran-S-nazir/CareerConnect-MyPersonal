@@ -115,31 +115,6 @@ export default function MyApplications({ embedded = false }) {
           <p className="text-sm text-slate-500 mt-1">
             Track internship & job applications
           </p>
-  return (
-    <div className="min-h-screen bg-[#f8fafc] py-8 px-4 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="max-w-5xl mx-auto mb-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5">
-          <div>
-            <h1 className="text-sm font-semibold tracking-wider text-slate-500 uppercase">
-              GEETA UNIVERSITY
-            </h1>
-            <h2 className="text-3xl font-extrabold text-[#1e3a8a] tracking-tight">
-              My Applications & Job Offers
-            </h2>
-            <p className="mt-2 text-slate-600">
-              Track your recruitment pipeline stages and review official employment offer letters.
-            </p>
-          </div>
-          <Link
-            to="/internships"
-            className="mt-4 sm:mt-0 inline-flex items-center text-sm font-bold text-[#1e3a8a] hover:text-[#1e40af] transition-colors"
-          >
-            <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-            Browse Listings
-          </Link>
         </div>
         {!embedded && (
           <Link to="/internships" className="text-xs font-bold text-[#1e3a8a]">
