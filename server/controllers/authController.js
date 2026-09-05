@@ -813,7 +813,6 @@ module.exports.completePasswordSetup = async (req, res, next) => {
       {
         hasPassword: true,
         $addToSet: { authProviders: "email" },
->>>>>>> 293fcc48662b7208619ad9b335c37a6d8e6d4d98
       },
       { new: true }
     );
