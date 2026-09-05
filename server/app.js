@@ -21,7 +21,13 @@ const organizationRoutes = require("./routes/organizationRoutes.js");
 const employerLearningRoutes = require("./routes/employerLearningRoutes.js");
 const employerAnalyticsRoutes = require("./routes/employerAnalyticsRoutes.js");
 
+const sessionMiddleware = require("./config/session.js");
+
 const app = express();
+
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
 
 // Middlewares
 const allowedOrigins = [
@@ -54,6 +60,7 @@ app.use(
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 app.use(cookieParser());
+app.use(sessionMiddleware);
 
 // Base & User Profile Routes
 app.use("/api/auth", authRoutes);
@@ -84,6 +91,9 @@ app.use("/api/organization", organizationRoutes);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
   console.error("Server Global Error:", err);
   const status = err.statusCode || err.status || 500;
   return res.status(status).json({
