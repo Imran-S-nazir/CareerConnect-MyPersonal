@@ -1,122 +1,185 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+
+// Auth
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import EmployerRegister from "./pages/auth/EmployerRegister";
+import ForgotPassword from "./pages/auth/ForgotPassword.jsx";
+import SetPassword from "./pages/auth/SetPassword.jsx";
+
+// Guards
+import RoleProtectedRoute from "./components/RoleProtectedRoute";
+
+// General & Discovery Pages
+import SelectRole from "./pages/SelectRole";
+import Home from "./pages/Home.jsx";
+import InternshipDiscoveryPage from "./pages/internships/InternshipDiscoveryPage";
+
+// Student
+import StudentDashboard from "./pages/student/StudentDashboard";
+import StudentProfile from "./pages/student/StudentProfile";
+import Internships from "./pages/student/Internships";
+import InternshipDetail from "./pages/student/InternshipDetail";
+import MyApplications from "./pages/student/MyApplications";
+
+// Fresher
+import FresherDashboard from "./pages/fresher/FresherDashboard";
+import FresherProfile from "./pages/fresher/FresherProfile";
+
+// Professional
+import ProfessionalDashboard from "./pages/professional/ProfessionalDashboard";
+import ProfessionalProfile from "./pages/professional/ProfessionalProfile";
+
+// Employer
+import EmployerProfile from "./pages/employer/EmployerProfile";
+import EmployerDashboard from "./pages/employer/EmployerDashboard";
+import CompanyPublicProfile from "./pages/employer/CompanyPublicProfile";
+import PostInternship from "./pages/employer/PostInternship";
+import MyInternships from "./pages/employer/MyInternships";
+import EditInternship from "./pages/employer/EditInternship";
+
+// Resume Builder
+import ResumeBuilder from "./pages/resume/ResumeBuilder";
+
+// Redux
+import { getCurrentUser } from "./services/authService";
+import { setUser, setInitialized } from "./redux/features/authSlice";
+
+// ─── Auth Initializer ─────────────────────────────────────────────────────────
+/**
+ * AuthInitializer — runs once on app startup.
+ *
+ * Calls GET /api/auth/me to check if a valid CareerConnect JWT cookie exists.
+ * If valid → restores user in Redux → isInitialized = true.
+ * If invalid/expired → isInitialized = true, user = null → protected routes redirect to /login.
+ *
+ * While this check is pending, renders a full-screen loading spinner to prevent
+ * a flash of the login page or incorrect redirects.
+ */
+const AuthInitializer = ({ children }) => {
+  const dispatch = useDispatch();
+  const { isInitialized } = useSelector((state) => state.auth);
+  const [initializing, setInitializing] = useState(!isInitialized);
+
+  useEffect(() => {
+    // If auth was already initialized (e.g., by a previous route check), skip
+    if (isInitialized) {
+      setInitializing(false);
+      return;
+    }
+
+    const initAuth = async () => {
+      try {
+        const res = await getCurrentUser();
+        if (res?.success && res?.user) {
+          dispatch(setUser(res.user));
+        } else {
+          dispatch(setInitialized(true));
+        }
+      } catch {
+        // 401 from /me means no valid session — that's normal for logged-out users
+        dispatch(setInitialized(true));
+      } finally {
+        setInitializing(false);
+      }
+    };
+
+    initAuth();
+  }, []); // Runs exactly once on mount
+
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-medium text-slate-500">Loading CareerConnect...</p>
+      </div>
+    );
+  }
+
+  return children;
+};
+
+// ─── App ──────────────────────────────────────────────────────────────────────
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <BrowserRouter>
+      <AuthInitializer>
+        <Routes>
+          {/* ========== PUBLIC & DISCOVERY ROUTES ========== */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register/student" element={<Signup />} />
+          <Route path="/register/employer" element={<EmployerRegister />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/select-role" element={<SelectRole />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/companies/:companyId" element={<CompanyPublicProfile />} />
 
-      <div className="ticks"></div>
+          {/* ========== SET PASSWORD (Google-first users) ========== */}
+          <Route path="/set-password" element={<SetPassword />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          {/* Category-Based Internship Discovery Routes */}
+          <Route path="/internships" element={<InternshipDiscoveryPage />} />
+          <Route path="/internships/browse" element={<Internships />} />
+          <Route path="/internships/work-from-home" element={<InternshipDiscoveryPage />} />
+          <Route path="/internships/international" element={<InternshipDiscoveryPage />} />
+          <Route path="/internships/latest" element={<InternshipDiscoveryPage />} />
+          <Route path="/internships/paid" element={<InternshipDiscoveryPage />} />
+          <Route path="/internships/with-job-offer" element={<InternshipDiscoveryPage />} />
+          <Route path="/internships/in/:city" element={<InternshipDiscoveryPage />} />
+          <Route path="/internships/category/:category" element={<InternshipDiscoveryPage />} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          {/* ========== CANDIDATES: student + fresher + professional ========== */}
+          <Route
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["student", "fresher", "professional"]}
+              />
+            }
+          >
+            <Route path="/internships/:id" element={<InternshipDetail />} />
+            <Route path="/applications" element={<MyApplications />} />
+          </Route>
+
+          {/* Student-only */}
+          <Route element={<RoleProtectedRoute allowedRoles={["student"]} />}>
+            <Route path="/student/dashboard" element={<StudentDashboard />} />
+            <Route path="/student/profile" element={<StudentProfile />} />
+          </Route>
+
+          {/* Fresher-only */}
+          <Route element={<RoleProtectedRoute allowedRoles={["fresher"]} />}>
+            <Route path="/fresher/dashboard" element={<FresherDashboard />} />
+            <Route path="/fresher/profile" element={<FresherProfile />} />
+          </Route>
+
+          {/* Professional-only */}
+          <Route element={<RoleProtectedRoute allowedRoles={["professional"]} />}>
+            <Route path="/professional/dashboard" element={<ProfessionalDashboard />} />
+            <Route path="/professional/profile" element={<ProfessionalProfile />} />
+          </Route>
+
+          {/* ========== EMPLOYER ========== */}
+          <Route element={<RoleProtectedRoute allowedRoles={["employer"]} />}>
+            <Route path="/employer/dashboard" element={<EmployerDashboard />} />
+            <Route path="/employer/profile" element={<EmployerProfile />} />
+            <Route path="/employer/company" element={<CompanyPublicProfile />} />
+            <Route path="/employer/internships" element={<MyInternships />} />
+            <Route path="/employer/internships/new" element={<PostInternship />} />
+            <Route path="/employer/internships/:id/edit" element={<EditInternship />} />
+          </Route>
+
+          <Route path="/resume-builder" element={<ResumeBuilder />} />
+
+          {/* ========== DEFAULT ========== */}
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </AuthInitializer>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
