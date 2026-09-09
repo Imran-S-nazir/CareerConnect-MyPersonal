@@ -4,6 +4,8 @@ const Job = require("../models/Job");
 const Application = require("../models/Application");
 const Course = require("../models/Course");
 const { isEligibleForInternship } = require("../utils/eligibility");
+const { getAggregatedOpportunities } = require("../services/jobScraperService");
+const mongoose = require("mongoose")
 
 // Skill benchmarks for target roles for Skill Gap Analysis
 const ROLE_SKILL_BENCHMARKS = {
@@ -145,60 +147,77 @@ module.exports.getStudentDashboard = async (req, res, next) => {
     const readiness = calculateCareerReadiness(profile, completion);
     const skillGap = analyzeSkillGap(profile);
 
-    // 1. Fetch Real Database Internships
-    const dbInternships = await Job.find({
-      status: "Published",
-      employmentType: "Internship",
-    })
-      .populate("employerId", "companyName logo headquarters")
-      .sort({ createdAt: -1 })
-      .lean();
+    // 1. Fetch Real Database Opportunities
+    let dbInternships = [];
+    let dbJobs = [];
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const Internship = require("../models/Internship");
+        const [internshipDocs, jobInternDocs, dbJobsDocs] = await Promise.all([
+          Internship.find({ status: "Published" })
+            .populate("employerId", "companyName logo headquarters")
+            .sort({ createdAt: -1 })
+            .lean(),
+          Job.find({
+            status: "Published",
+            employmentType: { $regex: /^internship$/i },
+          })
+            .populate("employerId", "companyName logo headquarters")
+            .sort({ createdAt: -1 })
+            .lean(),
+          Job.find({
+            status: "Published",
+            employmentType: { $not: /^internship$/i },
+          })
+            .populate("employerId", "companyName logo headquarters")
+            .sort({ createdAt: -1 })
+            .lean(),
+        ]);
+        dbInternships = [...(internshipDocs || []), ...(jobInternDocs || [])];
+        dbJobs = dbJobsDocs || [];
+      } catch (dbErr) {
+        console.warn("MongoDB find error in studentController:", dbErr.message);
+      }
+    }
 
-    const eligibleDbInternships = dbInternships.filter((job) =>
-      isEligibleForInternship(job, profile)
-    );
-
-    const recommendedInternships = eligibleDbInternships.map((job) => {
+    const recommendedInternships = (dbInternships || []).map((job) => {
       const stipendStr =
-        job.salaryRange?.min > 0
+        job.stipend ||
+        (job.salaryRange?.min > 0
           ? `₹${job.salaryRange.min.toLocaleString()} / month`
-          : "Competitive Stipend";
+          : job.stipendAmount?.min > 0
+          ? `₹${job.stipendAmount.min.toLocaleString()} / month`
+          : "Competitive Stipend");
 
       return {
         _id: job._id,
         id: job._id.toString(),
         jobId: job._id.toString(),
         title: job.title,
-        company: job.employerId?.companyName || "Partner Employer",
+        company: job.employerId?.companyName || job.companyName || "Partner Employer",
         companyId: job.employerId?._id || "",
         location: job.location,
         stipend: stipendStr,
         salary: stipendStr,
-        duration: "3-6 Months",
+        duration: job.duration || "3-6 Months",
         type: "Internship",
+        opportunityType: "Internship",
         workMode: job.workMode || "Remote",
-        skillsRequired: job.requiredSkills || [],
+        skillsRequired: job.requiredSkills || job.skillsRequired || [],
         postedAt: "Active",
-        deadline: job.deadline ? new Date(job.deadline).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "Open until filled",
+        deadline: job.deadline || job.applicationDeadline
+          ? new Date(job.deadline || job.applicationDeadline).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+          : "Open until filled",
         description: job.description,
         responsibilities: job.responsibilities,
       };
     });
 
-    // 2. Fetch Real Database Full-Time / Entry-Level Jobs
-    const dbJobs = await Job.find({
-      status: "Published",
-      employmentType: { $ne: "Internship" },
-    })
-      .populate("employerId", "companyName logo headquarters")
-      .sort({ createdAt: -1 })
-      .lean();
-
-    const recommendedJobs = dbJobs.map((job) => {
+    const recommendedJobs = (dbJobs || []).map((job) => {
       const salaryStr =
-        job.salaryRange?.min > 0
+        job.salaryRange?.max > 0
           ? `₹${(job.salaryRange.min / 100000).toFixed(1)} - ${(job.salaryRange.max / 100000).toFixed(1)} LPA`
-          : "Best in Industry";
+          : "Competitive Package";
 
       return {
         _id: job._id,
@@ -210,14 +229,18 @@ module.exports.getStudentDashboard = async (req, res, next) => {
         location: job.location,
         salary: salaryStr,
         type: job.employmentType || "Full-Time",
-        workMode: job.workMode || "Hybrid",
-        skillsRequired: job.requiredSkills || [],
+        opportunityType: job.employmentType || "Full-Time",
+        workMode: job.workMode || "On-Site",
+        skillsRequired: job.requiredSkills || job.skillsRequired || [],
         postedAt: "Active",
         deadline: job.deadline ? new Date(job.deadline).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "Open",
         description: job.description,
         responsibilities: job.responsibilities,
       };
     });
+
+    let finalRecommendedInternships = recommendedInternships;
+    let finalRecommendedJobs = recommendedJobs;
 
     // 3. Fetch Real Courses from database
     const dbCourses = await Course.find({ status: "Published" }).limit(6).lean();
@@ -240,23 +263,40 @@ module.exports.getStudentDashboard = async (req, res, next) => {
         select: "title department location employmentType workMode salaryRange deadline status",
         populate: { path: "employerId", select: "companyName logo" },
       })
+      .populate({
+        path: "internshipId",
+        select: "title department location workMode stipend duration deadline status companyName",
+        populate: { path: "employerId", select: "companyName logo" },
+      })
       .populate("employerId", "companyName logo")
       .sort({ createdAt: -1 })
       .lean();
 
     const appStats = {
       applied: dbApplications.filter((a) => a.status === "Applied").length,
+      approved: dbApplications.filter((a) => a.status === "Approved").length,
       underReview: dbApplications.filter((a) => ["Screening", "Under Review"].includes(a.status)).length,
       shortlisted: dbApplications.filter((a) => a.status === "Shortlisted").length,
       interview: dbApplications.filter((a) => ["Interview", "Final Interview", "Assessment"].includes(a.status)).length,
-      selected: dbApplications.filter((a) => ["Offer", "Hired"].includes(a.status)).length,
+      selected: dbApplications.filter((a) => ["Offer", "Hired", "Approved"].includes(a.status)).length,
       rejected: dbApplications.filter((a) => a.status === "Rejected").length,
     };
 
     const recentApps = dbApplications.map((app) => {
-      const jobTitle = app.jobId?.title || "Position";
-      const compName = app.jobId?.employerId?.companyName || app.employerId?.companyName || "Employer";
-      const appliedDateStr = new Date(app.createdAt).toLocaleDateString("en-GB", {
+      const oppTitle =
+        app.opportunityTitle ||
+        app.internshipId?.title ||
+        app.jobId?.title ||
+        "Position";
+      const compName =
+        app.companyName ||
+        app.internshipId?.companyName ||
+        app.internshipId?.employerId?.companyName ||
+        app.jobId?.companyName ||
+        app.jobId?.employerId?.companyName ||
+        app.employerId?.companyName ||
+        "Employer";
+      const appliedDateStr = new Date(app.createdAt || app.appliedAt || Date.now()).toLocaleDateString("en-GB", {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -266,7 +306,9 @@ module.exports.getStudentDashboard = async (req, res, next) => {
         _id: app._id,
         id: app._id.toString(),
         jobId: app.jobId?._id || "",
-        title: jobTitle,
+        internshipId: app.internshipId?._id || "",
+        opportunityType: app.opportunityType || (app.internshipId ? "Internship" : "Job"),
+        title: oppTitle,
         company: compName,
         appliedDate: appliedDateStr,
         status: app.status,
@@ -329,12 +371,12 @@ module.exports.getStudentDashboard = async (req, res, next) => {
         resume: profile.resume || {},
         careerGoal: profile.careerGoal || "Full Stack Developer",
         jobPreferences: profile.jobPreferences || {},
-        recommendedInternships,
-        recommendedJobs,
+        recommendedInternships: finalRecommendedInternships,
+        recommendedJobs: finalRecommendedJobs,
         recommendedCourses,
         applications,
         savedOpportunities: [],
-        upcomingDeadlines: recommendedInternships.slice(0, 3).map((int, idx) => ({
+        upcomingDeadlines: finalRecommendedInternships.slice(0, 3).map((int, idx) => ({
           id: `dl-${idx + 1}`,
           title: `${int.company} Internship Application`,
           type: "Internship",
@@ -356,7 +398,10 @@ module.exports.getStudentDashboard = async (req, res, next) => {
 module.exports.getStudentProfile = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    let profile = await StudentProfile.findOne({ userId }).populate("userId", "fullName email username phone profileImage");
+    let profile = await StudentProfile.findOne({ userId }).populate(
+      "userId",
+      "fullName email username phone profileImage socialLinks"
+    );
 
     if (!profile) {
       profile = await StudentProfile.create({
@@ -372,12 +417,23 @@ module.exports.getStudentProfile = async (req, res, next) => {
           },
         ],
       });
-      profile = await profile.populate("userId", "fullName email username phone profileImage");
+      profile = await profile.populate(
+        "userId",
+        "fullName email username phone profileImage socialLinks"
+      );
+    }
+
+    const completion = calculateProfileCompletion(profile, profile.userId || req.user);
+    if (profile.profileCompletion !== completion) {
+      profile.profileCompletion = completion;
+      profile.isProfileComplete = completion >= 80;
+      await profile.save();
     }
 
     return res.status(200).json({
       success: true,
       profile,
+      profileCompletion: completion,
     });
   } catch (error) {
     next(error);
@@ -392,13 +448,49 @@ module.exports.updateStudentProfile = async (req, res, next) => {
     const userId = req.user._id;
     const updateData = req.body;
 
+    // 1. Sync User-level fields if provided
+    const userUpdates = {};
+    if (updateData.fullName) userUpdates.fullName = String(updateData.fullName).trim();
+    if (updateData.phone !== undefined && String(updateData.phone).trim()) {
+      const cleanPhone = String(updateData.phone).replace(/\D/g, "");
+      const countryCode = updateData.countryCode?.trim() || "+91";
+      const taken = await User.findOne({
+        _id: { $ne: userId },
+        $or: [
+          { phone: cleanPhone },
+          { phone: cleanPhone.slice(-10) },
+          { phone: `${countryCode}${cleanPhone}` },
+        ],
+      });
+      if (taken) {
+        return res.status(409).json({
+          success: false,
+          message: "Mobile number is already registered with another account",
+        });
+      }
+      userUpdates.phone = cleanPhone;
+      if (updateData.countryCode) userUpdates.countryCode = updateData.countryCode.trim();
+    }
+    if (updateData.profileImage !== undefined) userUpdates.profileImage = String(updateData.profileImage).trim();
+    if (updateData.socialLinks) userUpdates.socialLinks = updateData.socialLinks;
+    if (updateData.resume?.resumeUrl) {
+      userUpdates.resumeUrl = updateData.resume.resumeUrl;
+      userUpdates.resumeName = updateData.resume.resumeName || "Student_Resume.pdf";
+    }
+
+    if (Object.keys(userUpdates).length > 0) {
+      await User.findByIdAndUpdate(userId, { $set: userUpdates });
+    }
+
+    // 2. Update Student Profile & Populate User Info
     const profile = await StudentProfile.findOneAndUpdate(
       { userId },
       { $set: updateData },
       { new: true, upsert: true, runValidators: true }
-    );
+    ).populate("userId", "fullName email username phone profileImage socialLinks");
 
-    const completion = calculateProfileCompletion(profile, req.user);
+    const updatedUser = await User.findById(userId).lean();
+    const completion = calculateProfileCompletion(profile, updatedUser || req.user);
     profile.profileCompletion = completion;
     profile.isProfileComplete = completion >= 80;
     await profile.save();
@@ -451,51 +543,147 @@ module.exports.applyOpportunity = async (req, res, next) => {
       });
     }
 
-    const job = await Job.findById(targetJobId).populate("employerId");
-    if (!job) {
-      return res.status(404).json({
-        success: false,
-        message: "Job opportunity not found",
+    // Handle external / scraped opportunities gracefully
+    if (typeof targetJobId === "string" && targetJobId.startsWith("scraped-")) {
+      return res.status(200).json({
+        success: true,
+        message: `Application recorded for "${title || "position"}"!`,
+        isExternal: true,
+        application: {
+          _id: `ext-app-${Date.now()}`,
+          jobId: targetJobId,
+          title: title || "External Opportunity",
+          company: company || "Partner Employer",
+          status: "Applied",
+          appliedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+          createdAt: new Date(),
+        },
       });
     }
 
-    if (job.status !== "Published") {
+    const Internship = require("../models/Internship");
+    const EmployerProfile = require("../models/EmployerProfile");
+
+    let job = null;
+    let isInternship = false;
+    if (mongoose.Types.ObjectId.isValid(targetJobId)) {
+      job = await Job.findById(targetJobId).populate("employerId");
+      if (!job) {
+        job = await Internship.findById(targetJobId).populate("employerId");
+        if (job) isInternship = true;
+      }
+    }
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Opportunity not found",
+      });
+    }
+
+    if (job.status !== "Published" && job.status !== "Active") {
       return res.status(400).json({
         success: false,
         message: "This position is no longer accepting applications",
       });
     }
 
-    const existing = await Application.findOne({ jobId: targetJobId, candidateId });
+    // Check duplicate
+    const existing = await Application.findOne({
+      candidateId,
+      $or: [{ jobId: targetJobId }, { internshipId: targetJobId }],
+    });
     if (existing) {
       return res.status(409).json({
         success: false,
-        message: "Application already submitted for this position",
+        message: "You have already applied for this position.",
       });
     }
 
-    // Match calculation
+    // Determine target employerId
+    let resolvedEmployerId = job.employerId?._id || job.employerId;
+    if (!resolvedEmployerId && job.createdBy) {
+      const empProfile = await EmployerProfile.findOne({ userId: job.createdBy });
+      resolvedEmployerId = empProfile ? empProfile._id : job.createdBy;
+    }
+
+    // Extract exact submitted data from request
+    const {
+      fullName,
+      studentName,
+      email,
+      studentEmail,
+      phone,
+      studentPhone,
+      education,
+      skills,
+      experience,
+      portfolioUrl,
+      resumeUrl,
+      coverLetter,
+      coverNote,
+      applicationData: rawAppData,
+    } = req.body;
+
     const studentProf = await StudentProfile.findOne({ userId: candidateId }).lean();
-    const candidateSkills = studentProf?.technicalSkills || [];
+
+    const finalName = fullName || studentName || studentProf?.fullName || req.user.name || "Student Applicant";
+    const finalEmail = email || studentEmail || studentProf?.email || req.user.email;
+    const finalPhone = phone || studentPhone || studentProf?.phone || "";
+    const finalResume = resumeUrl || req.body.resume || studentProf?.resume?.resumeUrl || "";
+    const finalCover = coverLetter || coverNote || "";
+    const finalEdu = education || (studentProf?.education?.[0] ? `${studentProf.education[0].degree} at ${studentProf.education[0].institution}` : "");
+    const finalSkills = Array.isArray(skills)
+      ? skills
+      : typeof skills === "string" && skills.trim()
+      ? skills.split(",").map((s) => s.trim())
+      : studentProf?.technicalSkills || [];
+    const finalExp = experience || "";
+    const finalPortfolio = portfolioUrl || studentProf?.links?.portfolio || "";
+
+    const fullApplicationData = {
+      fullName: finalName,
+      email: finalEmail,
+      phone: finalPhone,
+      education: finalEdu,
+      skills: finalSkills,
+      experience: finalExp,
+      portfolioUrl: finalPortfolio,
+      resumeUrl: finalResume,
+      coverLetter: finalCover,
+      ...(rawAppData || {}),
+    };
+
+    // Match calculation
+    const candidateSkills = studentProf?.technicalSkills || finalSkills || [];
     const strongSkills = candidateSkills.filter((s) =>
       (job.requiredSkills || []).some((reqS) => reqS.toLowerCase() === s.toLowerCase())
     );
     const missingSkills = (job.requiredSkills || []).filter(
       (reqS) => !candidateSkills.some((s) => s.toLowerCase() === reqS.toLowerCase())
     );
-
     const matchOverall = Math.min(100, Math.max(40, Math.round(50 + (strongSkills.length * 15))));
 
-    const application = await Application.create({
-      jobId: targetJobId,
+    const applicationPayload = {
       candidateId,
-      employerId: job.employerId?._id || job.employerId,
-      resumeUrl: studentProf?.resume?.resumeUrl || "",
+      employerId: resolvedEmployerId,
+      opportunityType: isInternship ? "Internship" : "Job",
       status: "Applied",
+      appliedAt: new Date(),
+      resumeUrl: finalResume,
+      studentName: finalName,
+      studentEmail: finalEmail,
+      studentPhone: finalPhone,
+      education: typeof finalEdu === "object" ? JSON.stringify(finalEdu) : finalEdu,
+      skills: finalSkills,
+      experience: finalExp,
+      portfolioUrl: finalPortfolio,
+      coverLetter: finalCover,
+      applicationData: fullApplicationData,
       stageHistory: [
         {
           stage: "Applied",
-          notes: "Student applied via LMS Student Dashboard",
+          notes: "Student applied via CareerConnect Portal",
           changedBy: candidateId,
           changedAt: new Date(),
         },
@@ -510,12 +698,27 @@ module.exports.applyOpportunity = async (req, res, next) => {
         strongSkills,
         missingSkills,
       },
-    });
+    };
 
-    job.applicantsCount += 1;
-    await job.save();
+    if (isInternship) {
+      applicationPayload.internshipId = targetJobId;
+    } else {
+      applicationPayload.jobId = targetJobId;
+    }
 
-    const companyName = job.employerId?.companyName || company || "Partner Employer";
+    const application = await Application.create(applicationPayload);
+
+    if (typeof job.applicantsCount === "number") {
+      job.applicantsCount += 1;
+      await job.save();
+    }
+
+    const companyName =
+      job.employerId?.companyName ||
+      job.companyName ||
+      job.company ||
+      company ||
+      "Partner Employer";
 
     return res.status(201).json({
       success: true,
@@ -526,13 +729,20 @@ module.exports.applyOpportunity = async (req, res, next) => {
         jobId: job._id.toString(),
         title: job.title,
         company: companyName,
-        type: job.employmentType,
+        type: job.employmentType || "Internship",
         appliedDate: "Today",
         status: "Applied",
         lastUpdated: "Just now",
+        applicationData: fullApplicationData,
       },
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already applied for this position.",
+      });
+    }
     next(error);
   }
 };

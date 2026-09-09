@@ -86,6 +86,12 @@ const userSchema = new mongoose.Schema(
     // COMMON ACCOUNT INFORMATION
     // ==========================================
 
+    countryCode: {
+      type: String,
+      default: "+91",
+      trim: true,
+    },
+
     phone: {
       type: String,
       default: "",
@@ -93,6 +99,18 @@ const userSchema = new mongoose.Schema(
     },
 
     profileImage: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    resumeUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    resumeName: {
       type: String,
       default: "",
       trim: true,
@@ -200,6 +218,15 @@ const userSchema = new mongoose.Schema(
 
   {
     timestamps: true,
+  }
+);
+
+// Ensure phone is unique per countryCode when non-empty
+userSchema.index(
+  { phone: 1, countryCode: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { phone: { $type: "string", $gt: "" } },
   }
 );
 

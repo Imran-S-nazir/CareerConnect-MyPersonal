@@ -1,4 +1,4 @@
-const JobRecommendationsCard = ({ jobs = [], onSave, onApply, savedIds = [] }) => {
+const JobRecommendationsCard = ({ jobs = [], onSave, onApply, savedIds = [], onViewAll }) => {
   return (
     <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs">
       <div className="flex justify-between items-center mb-5">
@@ -11,6 +11,15 @@ const JobRecommendationsCard = ({ jobs = [], onSave, onApply, savedIds = [] }) =
           </div>
           <p className="text-xs text-slate-500 mt-0.5">Entry-level & campus hiring opportunities</p>
         </div>
+        {onViewAll && (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="text-xs font-bold text-[#1e3a8a] hover:text-[#1e40af] transition"
+          >
+            View All Jobs →
+          </button>
+        )}
       </div>
 
       {jobs && jobs.length > 0 ? (
@@ -68,12 +77,26 @@ const JobRecommendationsCard = ({ jobs = [], onSave, onApply, savedIds = [] }) =
                     {isSaved ? "★ Saved" : "☆ Save"}
                   </button>
 
-                  <button
-                    onClick={() => onApply(job)}
-                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition"
-                  >
-                    Apply Now
-                  </button>
+                  {job.applyLink ? (
+                    <a
+                      href={job.applyLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition inline-flex items-center gap-1.5"
+                    >
+                      <span>Apply Online</span>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => onApply(job)}
+                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition"
+                    >
+                      Apply Now
+                    </button>
+                  )}
                 </div>
               </div>
             );
